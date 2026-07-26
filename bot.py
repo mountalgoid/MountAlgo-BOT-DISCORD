@@ -3135,12 +3135,8 @@ async def select_language_action(interaction: discord.Interaction, lang: str):
         else "✅ Your language has been set to **English**!"
     )
 
-    avatar_url = interaction.guild.me.display_avatar.url if interaction.guild.me else None
-    embeds = get_translated_embeds(lang, avatar_url, interaction.user.mention)
-
     await interaction.response.send_message(
         content=confirm_text,
-        embeds=embeds,
         ephemeral=True
     )
 
