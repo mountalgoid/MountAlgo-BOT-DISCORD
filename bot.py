@@ -1668,7 +1668,8 @@ class Database:
                 column_changes = [
                     # (nama_kolom, tipe_data, perintah_sql)
                     ("subscription_type", "TEXT", "ALTER TABLE users ADD COLUMN subscription_type TEXT"),
-                    ("expiry_date", "TEXT", "ALTER TABLE users ADD COLUMN expiry_date TEXT")
+                    ("expiry_date", "TEXT", "ALTER TABLE users ADD COLUMN expiry_date TEXT"),
+                    ("language", "TEXT", "ALTER TABLE users ADD COLUMN language TEXT DEFAULT 'id'")
                 ]
                 
                 # Cek kolom yang sudah ada untuk users
@@ -1676,7 +1677,7 @@ class Database:
                 existing_columns_users = [row[1] for row in await cursor.fetchall()]
                 
                 # Tambahkan kolom yang belum ada untuk users
-                for column_name, col_type, sql_command in column_changes[:2]:  # Only users columns
+                for column_name, col_type, sql_command in column_changes:  # Only users columns
                     if column_name not in existing_columns_users and "users" in sql_command:
                         try:
                             await db.execute(sql_command)
@@ -1722,6 +1723,47 @@ class Database:
         except Exception as e:
             logging.error(f"add_user error: {str(e)}")
             return False
+
+    @classmethod
+    async def get_user_language(cls, user_id: int) -> str:
+        """Dapatkan preferensi bahasa user, default 'id'"""
+        try:
+            async with aiosqlite.connect(cls.DB_PATH) as db:
+                async with db.execute(
+                    "SELECT language FROM users WHERE user_id = ?",
+                    (user_id,)
+                ) as cursor:
+                    row = await cursor.fetchone()
+                    if row and row[0]:
+                        return row[0]
+        except Exception as e:
+            logging.error(f"get_user_language error: {e}")
+        return "id"
+
+    @classmethod
+    async def update_user_language(cls, user_id: int, username: str, language: str) -> bool:
+        """Update preferensi bahasa user, daftarkan jika belum ada"""
+        try:
+            async with aiosqlite.connect(cls.DB_PATH) as db:
+                # Cek apakah user sudah ada
+                async with db.execute("SELECT 1 FROM users WHERE user_id = ?", (user_id,)) as cursor:
+                    exists = await cursor.fetchone()
+
+                if exists:
+                    await db.execute(
+                        "UPDATE users SET language = ? WHERE user_id = ?",
+                        (language, user_id)
+                    )
+                else:
+                    await db.execute(
+                        "INSERT INTO users (user_id, username, status, language) VALUES (?, ?, ?, ?)",
+                        (user_id, username, "PendingVerification", language)
+                    )
+                await db.commit()
+                return True
+        except Exception as e:
+            logging.error(f"update_user_language error: {e}")
+        return False
 
     @staticmethod
     async def check_expiry():
@@ -2836,6 +2878,298 @@ async def send_permission_update_embed(interaction: Optional[discord.Interaction
     
     return embed
  
+# --- Translations Helper ---
+def get_translated_embeds(lang: str, avatar_url: str = None, user_mention: str = "") -> list:
+    embeds = []
+    if lang == "en":
+        # 1. Rules Embed
+        rules = discord.Embed(
+            title="》》 MountAlgo SERVER RULES 》》",
+            description=(
+                "\n✇ Welcome to the **MountAlgo** community!\n"
+                "✇ To keep the server comfortable, safe, and useful for everyone,\n"
+                "✇ please read and comply with the following rules:"
+            ),
+            color=0x2ecc71
+        )
+        rules.add_field(
+            name="➮ ➊ Mutual Respect",
+            value="```diff\n❑ Respect all members regardless of background.\n❑ Cyberbullying, SARA, harassment, or provocation is prohibited.```",
+            inline=False
+        )
+        rules.add_field(
+            name="➮ ➋ No Spam & Advertising",
+            value="```diff\n❑ Spamming messages, promotions, or links without admin permission\n❑ is strictly prohibited.```",
+            inline=False
+        )
+        rules.add_field(
+            name="➮ ➌ Maintain Privacy",
+            value="```diff\n❑ Do not share your own or others' personal data\n❑ without permission.```",
+            inline=False
+        )
+        rules.add_field(
+            name="➮ ➍ Content & Language",
+            value="```diff\n❑ Use polite language.\n❑ NSFW, gambling, or illegal content is not allowed.```",
+            inline=False
+        )
+        rules.add_field(
+            name="➮ ➎ Discussion Topics",
+            value="```diff\n❑ Focus on trading, education, and financial discussion.\n❑ Avoid OOT (off-topic) in main channels.```",
+            inline=False
+        )
+        rules.add_field(
+            name="➮ ▰ Sanctions",
+            value="```diff\n❑ Violations will result in warnings\n❑ up to permanent ban depending on violation level.```",
+            inline=False
+        )
+        rules.set_footer(text="By staying in this server, you agree to all the rules above.")
+        if avatar_url:
+            rules.set_thumbnail(url=avatar_url)
+        embeds.append(rules)
+
+        # 2. Disclaimer Embed
+        disc = discord.Embed(
+            title="🌟 Welcome to the MountAlgo Community! 🌟",
+            description=(
+                "Before exploring further, let's understand our community principles together\n"
+                "▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n"
+                "**This community is an educational space, not a licensed investment platform**\n"
+                "Please read the following statement carefully ⚠️"
+            ),
+            color=0x3498db
+        )
+        disc.add_field(
+            name="📋 Educational Community Status",
+            value=(
+                "```diff\n"
+                "+ MountAlgo is a trading education community\n"
+                "+ Main focus: independent learning\n"
+                "+ All content is educational\n"
+                "- Not an investment provider/financial advisor\n"
+                "- Not affiliated with any broker\n"
+                "```"
+            ),
+            inline=False
+        )
+        disc.add_field(
+            name="🤝 Shared Responsibility",
+            value=(
+                "```diff\n"
+                "▸ By joining, we agree:\n"
+                "+ To share trading knowledge\n"
+                "+ To prioritize independent learning\n"
+                "+ Verify brokers through official sites:\n"
+                "  • https://bappebti.go.id\n"
+                "  • https://ojk.go.id\n"
+                "```"
+            ),
+            inline=False
+        )
+        disc.add_field(
+            name="⚠️ Important: Risk Management",
+            value=(
+                "```diff\n"
+                "▸ Trading contains high risk:\n"
+                "! Only use funds you are ready to lose\n"
+                "! Avoid using essential livelihood/debt funds\n"
+                "! Unexpected market fluctuations\n"
+                "+ Community is ready to help risk management education\n"
+                "```"
+            ),
+            inline=False
+        )
+        disc.set_footer(text="By proceeding, you state that you understand the spirit of this educational community 🤗")
+        if avatar_url:
+            disc.set_thumbnail(url=avatar_url)
+        embeds.append(disc)
+
+        # 3. Verification Embed
+        verif = discord.Embed(
+            title="🚦 MountAlgo MEMBER VERIFICATION",
+            description=(
+                f"Hello {user_mention},\n\n"
+                "**Welcome to the MountAlgo community!**\n\n"
+                "To access the server, you must agree to the rules and verify:\n"
+                "```diff\n"
+                "+ 1. Read #rules and #disclaimer\n"
+                "+ 2. Click the 'Agree & Verify' button in #verifikasi\n"
+                "+ 3. For premium subscription, click 'Premium Subscription'\n"
+                "```\n"
+                "Only verified members can access server channels."
+            ),
+            color=0x5865F2
+        )
+        verif.set_footer(text="MountAlgo Security System")
+        if avatar_url:
+            verif.set_thumbnail(url=avatar_url)
+        embeds.append(verif)
+
+    else:
+        # Indonesian versions (default)
+        rules = discord.Embed(
+            title="》》 PERATURAN SERVER MountAlgo 》》",
+            description=(
+                "\n✇ Selamat datang di komunitas **MountAlgo**!\n"
+                "✇ Agar server tetap nyaman, aman, dan bermanfaat untuk semua,\n"
+                "✇ harap baca dan patuhi peraturan berikut:"
+            ),
+            color=0x2ecc71
+        )
+        rules.add_field(
+            name="➮ ➊ Saling Menghormati",
+            value="```diff\n❑ Hormati semua anggota tanpa memandang latar belakang.\n❑ Tidak diperbolehkan SARA, bullying, atau provokasi.```",
+            inline=False
+        )
+        rules.add_field(
+            name="➮ ➋ Dilarang Spam & Iklan",
+            value="```diff\n❑ Spam pesan, promosi, atau link tanpa izin admin\n❑ dilarang keras.```",
+            inline=False
+        )
+        rules.add_field(
+            name="➮ ➌ Jaga Privasi",
+            value="```diff\n❑ Dilarang menyebarkan data pribadi milik sendiri\n❑ atau orang lain tanpa izin.```",
+            inline=False
+        )
+        rules.add_field(
+            name="➮ ➍ Konten & Bahasa",
+            value="```diff\n❑ Gunakan bahasa yang sopan.\n❑ Tidak diperbolehkan konten NSFW, judi, atau ilegal.```",
+            inline=False
+        )
+        rules.add_field(
+            name="➮ ➎ Topik Diskusi",
+            value="```diff\n❑ Fokus pada trading, edukasi, dan diskusi finansial.\n❑ Hindari OOT (off-topic) di channel utama.```",
+            inline=False
+        )
+        rules.add_field(
+            name="➮ ▰ Sanksi",
+            value="```diff\n❑ Pelanggaran akan diberikan peringatan\n❑ hingga banned permanen sesuai tingkat pelanggaran.```",
+            inline=False
+        )
+        rules.set_footer(text="Dengan tetap berada di server ini, Anda dianggap setuju dengan seluruh peraturan di atas.")
+        if avatar_url:
+            rules.set_thumbnail(url=avatar_url)
+        embeds.append(rules)
+
+        disc = discord.Embed(
+            title="🌟 Selamat Datang di Komunitas MountAlgo! 🌟",
+            description=(
+                "Sebelum menjelajah lebih jauh, mari bersama-sama memahami prinsip komunitas kita\n"
+                "▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n"
+                "**Komunitas ini adalah ruang edukasi mandiri, bukan platform investasi berizin**\n"
+                "Silakan baca pernyataan berikut dengan saksama ⚠️"
+            ),
+            color=0x3498db
+        )
+        disc.add_field(
+            name="📋 Status Komunitas Edukasi",
+            value=(
+                "```diff\n"
+                "+ MountAlgo adalah komunitas edukasi trading\n"
+                "+ Fokus utama: pembelajaran mandiri\n"
+                "+ Semua konten bersifat edukasional\n"
+                "- Bukan penyedia jasa investasi/penasihat keuangan\n"
+                "- Tidak terafiliasi dengan broker manapun\n"
+                "```"
+            ),
+            inline=False
+        )
+        disc.add_field(
+            name="🤝 Tanggung Jawab Bersama",
+            value=(
+                "```diff\n"
+                "▸ Dengan bergabung, kita sepakat:\n"
+                "+ Berbagi pengetahuan trading\n"
+                "+ Mengedepankan pembelajaran mandiri\n"
+                "+ Verifikasi broker melalui situs resmi:\n"
+                "  • https://bappebti.go.id\n"
+                "  • https://ojk.go.id\n"
+                "```"
+            ),
+            inline=False
+        )
+        disc.add_field(
+            name="⚠️ Penting: Manajemen Risiko",
+            value=(
+                "```diff\n"
+                "▸ Trading mengandung risiko tinggi:\n"
+                "! Hanya gunakan dana 'siap rugi'\n"
+                "! Hindari dana kebutuhan pokok/utang\n"
+                "! Fluktuasi pasar tak terduga\n"
+                "+ Komunitas siap bantu edukasi manajemen risiko\n"
+                "```"
+            ),
+            inline=False
+        )
+        disc.set_footer(text="Dengan melanjutkan, Anda menyatakan telah memahami semangat komunitas edukasi ini 🤗")
+        if avatar_url:
+            disc.set_thumbnail(url=avatar_url)
+        embeds.append(disc)
+
+        verif = discord.Embed(
+            title="🚦 VERIFIKASI ANGGOTA MountAlgo",
+            description=(
+                f"Halo {user_mention},\n\n"
+                "**Selamat datang di komunitas MountAlgo!**\n\n"
+                "Untuk mengakses server, Anda harus menyetujui peraturan dan melakukan verifikasi:\n"
+                "```diff\n"
+                "+ 1. Baca #peraturan dan #disclaimer\n"
+                "+ 2. Klik tombol 'Setuju & Verifikasi' di bawah ini\n"
+                "+ 3. Jika ingin langganan premium klik 'Langganan Premium'\n"
+                "```\n"
+                "Hanya anggota terverifikasi yang bisa mengakses channel server."
+            ),
+            color=0x5865F2
+        )
+        verif.set_footer(text="MountAlgo Security System")
+        if avatar_url:
+            verif.set_thumbnail(url=avatar_url)
+        embeds.append(verif)
+
+    return embeds
+
+async def select_language_action(interaction: discord.Interaction, lang: str):
+    await Database.update_user_language(interaction.user.id, interaction.user.name, lang)
+
+    confirm_text = (
+        "✅ Bahasa diatur ke **Bahasa Indonesia**!" if lang == "id"
+        else "✅ Your language has been set to **English**!"
+    )
+
+    avatar_url = interaction.guild.me.display_avatar.url if interaction.guild.me else None
+    embeds = get_translated_embeds(lang, avatar_url, interaction.user.mention)
+
+    await interaction.response.send_message(
+        content=confirm_text,
+        embeds=embeds,
+        ephemeral=True
+    )
+
+class WelcomeButtonView(discord.ui.View):
+    def __init__(self, rules_url: str = None):
+        super().__init__(timeout=None)
+        if rules_url:
+            self.add_item(discord.ui.Button(
+                label="Arungi Lautan / Navigate Market 🌊🛳️",
+                style=discord.ButtonStyle.success,
+                url=rules_url
+            ))
+
+    @discord.ui.button(
+        label="🇮🇩 Bahasa Indonesia",
+        style=discord.ButtonStyle.primary,
+        custom_id="welcome_lang_id"
+    )
+    async def select_id(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await select_language_action(interaction, "id")
+
+    @discord.ui.button(
+        label="🇬🇧 English",
+        style=discord.ButtonStyle.primary,
+        custom_id="welcome_lang_en"
+    )
+    async def select_en(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await select_language_action(interaction, "en")
+
 # --- Welcome ---
 async def send_welcome_embed(channel: discord.TextChannel):
     """Mengirim embed welcome dengan desain khusus dan tombol ke channel peraturan"""
@@ -2852,22 +3186,12 @@ async def send_welcome_embed(channel: discord.TextChannel):
         f"{small_text}\n\n"    # Teks kecil di bawah
     )
 
-    # Buat tombol yang mengarah ke channel peraturan
-    class WelcomeButtonView(discord.ui.View):
-        def __init__(self):
-            super().__init__(timeout=None)
-            # Cari channel peraturan di server
-            rules_channel = discord.utils.get(channel.guild.text_channels, name="peraturan")
-            # Buat tombol jika channel ditemukan
-            if rules_channel:
-                self.add_item(discord.ui.Button(
-                    label="Arungi Lautan Pasar 🌊🛳️ ",
-                    style=discord.ButtonStyle.success,
-                    url=f"https://discord.com/channels/{channel.guild.id}/{rules_channel.id}"
-                ))
+    # Cari channel peraturan di server
+    rules_channel = discord.utils.get(channel.guild.text_channels, name="peraturan")
+    rules_url = f"https://discord.com/channels/{channel.guild.id}/{rules_channel.id}" if rules_channel else None
 
     # Kirim embed beserta tombol
-    await channel.send(embed=embed, view=WelcomeButtonView())
+    await channel.send(embed=embed, view=WelcomeButtonView(rules_url=rules_url))
 
 # --- Peraturan Server ---
 async def send_peraturan_embed(channel: discord.TextChannel):
@@ -3869,6 +4193,7 @@ async def send_kontrol_pengguna_embed(channel: discord.TextChannel):
             "● ❑ **Tambah Pengguna**: Daftarkan pengguna baru secara manual\n"
             "● ❑ **Hapus Pengguna**: Hapus pengguna dari basis data\n"
             "● ❑ **Tingkatkan Pengguna**: Jadikan pengguna WizardMember\n"
+            "● ❑ **Sinkronkan User**: Sinkronkan database dengan role Discord\n"
             "● ❑ **Lihat Status**: Periksa daftar pengguna dan statusnya\n"
             "▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n"
             "➮ Hanya admin yang dapat mengakses panel ini"
@@ -3932,6 +4257,7 @@ async def send_kontrol_admin_embed(channel: discord.TextChannel):
             "```yaml\n"
             "● Promosikan atau turunkan admin\n"
             "● Atur izin pengguna\n"
+            "● Atur ulang setup server lengkap\n"
             "```"
         ),
         inline=False
@@ -4048,153 +4374,298 @@ class VerifView(discord.ui.View):
     async def cek_status(self, interaction: discord.Interaction, button: discord.ui.Button):
         user = interaction.user
         roles = [r.name for r in user.roles]
+        lang = await Database.get_user_language(user.id)
 
-        # Jika sudah Admin
-        if "Admin" in roles:
+        if lang == "en":
+            # Jika sudah Admin
+            if "Admin" in roles:
+                embed = discord.Embed(
+                    title="🛡️ ADMIN STATUS",
+                    description="You are an **Admin** in the MountAlgo server.\nFull access to all features, user controls, and admin panel.\n\nThank you for your contribution to the community!",
+                    color=0xffc300
+                )
+                embed.add_field(
+                    name="Admin Privileges",
+                    value=(
+                        "• Manage users & channels\n"
+                        "• Create/close signals\n"
+                        "• Reset important content\n"
+                        "• Full control panel access"
+                    ),
+                    inline=False
+                )
+                embed.set_footer(text="MountAlgo Admin System")
+                await interaction.response.send_message(embed=embed, ephemeral=True)
+                return
+
+            # Jika sudah WizardMember
+            if "WizardMemberBulanan" in roles:
+                embed = discord.Embed(
+                    title="💎 Monthly Wizard Member STATUS",
+                    description="You are already **verified** and subscribed to the **Monthly WizardMember**.\nPremium access is active, enjoy all exclusive features of MountAlgo!",
+                    color=0x5134ff
+                )
+                embed.add_field(
+                    name="Premium Features",
+                    value=(
+                        "• Wizard Toolkits: Versatile Tools\n"
+                        "• Wizard Analysis: Deep analysis of crypto, forex, and commodity assets\n"
+                        "• Wizard Strategy: Carefully packaged strategies for trading in crypto, forex, and commodity markets\n\n"
+                        "• Priority consultation\n"
+                        "• Exclusive events"
+                    ),
+                    inline=False
+                )
+                embed.set_footer(text="MountAlgo WizardMember System")
+                await interaction.response.send_message(embed=embed, ephemeral=True)
+                return
+
+            if "WizardMemberTahunan" in roles:
+                embed = discord.Embed(
+                    title="🏆 Yearly Wizard Member STATUS",
+                    description="You are already **verified** and subscribed to the **Yearly WizardMember**.\nPremium access is active, enjoy all exclusive features of MountAlgo!",
+                    color=0x5134ff
+                )
+                embed.add_field(
+                    name="Premium Features",
+                    value=(
+                        "• Wizard Toolkits: Versatile Tools\n"
+                        "• Wizard Analysis: Deep analysis of crypto, forex, and commodity assets\n"
+                        "• Wizard Strategy: Carefully packaged strategies for trading in crypto, forex, and commodity markets\n\n"
+                        "• Priority consultation\n"
+                        "• Exclusive events"
+                    ),
+                    inline=False
+                )
+                embed.set_footer(text="MountAlgo WizardMember System")
+                await interaction.response.send_message(embed=embed, ephemeral=True)
+                return
+            # Jika sudah member
+            if "member" in roles:
+                embed = discord.Embed(
+                    title="✅ VERIFIED MEMBER STATUS",
+                    description="You are already **verified** as a MountAlgo member.\nNo need to verify again, public channel access is open.",
+                    color=0x27ae60
+                )
+                embed.add_field(
+                    name="Member Tips",
+                    value=(
+                        "• Actively discuss in #obrolan\n"
+                        "• Read materials in #akademi\n"
+                        "• Upgrade to WizardMember for premium features"
+                    ),
+                    inline=False
+                )
+                embed.set_footer(text="MountAlgo Member System")
+                await interaction.response.send_message(embed=embed, ephemeral=True)
+                return
+
+            # Hapus Unverified, tambahkan member
+            guild = interaction.guild
+            unverified_role = discord.utils.get(guild.roles, name="Unverified")
+            member_role = discord.utils.get(guild.roles, name="member")
+
+            if unverified_role and unverified_role in user.roles:
+                await user.remove_roles(unverified_role)
+            if member_role and member_role not in user.roles:
+                await user.add_roles(member_role)
+
+            try:
+                await VerificationSystem.verify_and_update_database(user)
+            except Exception as e:
+                print(f"Gagal update database: {e}")
+
             embed = discord.Embed(
-                title="🛡️ STATUS ADMIN",
-                description="Kamu adalah **Admin** di server MountAlgo.\nAkses penuh ke seluruh fitur, kontrol pengguna, dan panel admin.\n\nTerima kasih atas kontribusimu menjaga komunitas!",
-                color=0xffc300
+                title="🎉 Congratulations! You Are Verified 🎉",
+                description=(
+                    "✨ **Full Access Has Been Opened!** ✨\n\n"
+                    "You are now officially part of the **MountAlgo** family!\n"
+                    "Explore various features, discussions, and trading opportunities with the best community. 🚀\n\n"
+                    "Here are some initial steps you can take:"
+                ),
+                color=discord.Color.from_rgb(41, 128, 185)
             )
+            embed.set_thumbnail(url=guild.me.display_avatar.url if guild.me else None)
             embed.add_field(
-                name="Hak Khusus Admin",
+                name="📢 Important Channels",
                 value=(
-                    "• Mengelola pengguna & channel\n"
-                    "• Membuat/menutup sinyal\n"
-                    "• Reset konten penting\n"
-                    "• Akses penuh panel kontrol"
+                    "• **#pengumuman** — Latest info & events\n"
+                    "• **#akademi** — Learn trading from scratch\n"
+                    "• **#obrolan** — Free discussion & sharing"
                 ),
                 inline=False
             )
-            embed.set_footer(text="MountAlgo Admin System")
-            await interaction.response.send_message(embed=embed, ephemeral=True)
-            return
-
-        # Jika sudah WizardMember
-        if "WizardMemberBulanan" in roles:
-            embed = discord.Embed(
-                title="💎 STATUS Wizard Member Bulanan",
-                description="Kamu sudah **terverifikasi** dan **berlangganan WizardMember bulanan**.\nAkses premium aktif, nikmati seluruh fitur eksklusif MountAlgo!",
-                color=0x5134ff
-            )
             embed.add_field(
-                name="Fitur Premium",
+                name="🔰 Initial Tips",
                 value=(
-                    "• Wizard Toolkits: Alat Serbaguna\n"
-                    "• Wizard Analisis: Analisis Dari aset crypto forex dan komoditas yang mendalam \n"
-                    "• Wizard Setrategi : Strategi khusus yang dipacking sebaik mungkin untuk Strategi perdagangan di pasar crypto forex dan komoditas\n\n"
-                    "• Konsultasi prioritas\n"
-                    "• event eksklusif"
+                    "✅ Complete your Discord profile\n"
+                    "✅ Introduce yourself in #perkenalan\n"
+                    "✅ Read server rules in #peraturan\n"
+                    "✅ Don't hesitate to ask, everyone is friendly!"
                 ),
                 inline=False
             )
-            embed.set_footer(text="MountAlgo WizardMember System")
-            await interaction.response.send_message(embed=embed, ephemeral=True)
-            return
-        
-        if "WizardMemberTahunan" in roles:
-            embed = discord.Embed(
-                title="🏆 STATUS Wizard Member Tahunan",
-                description="Kamu sudah **terverifikasi** dan **berlangganan WizardMember Tahunan**.\nAkses premium aktif, nikmati seluruh fitur eksklusif MountAlgo!",
-                color=0x5134ff
-            )
             embed.add_field(
-                name="Fitur Premium",
+                name="💡 Upgrade to WizardMember?",
                 value=(
-                    "• Wizard Toolkits: Alat Serbaguna\n"
-                    "• Wizard Analisis: Analisis Dari aset crypto forex dan komoditas yang mendalam \n"
-                    "• Wizard Setrategi : Strategi khusus yang dipacking sebaik mungkin untuk Strategi perdagangan di pasar crypto forex dan komoditas\n\n"
-                    "• Konsultasi prioritas\n"
-                    "• event eksklusif"
+                    "Unlock ultimate signals, advanced dashboards, and high-win rate tools in the Premium category!\n"
+                    "Explore the Wizard Room now."
                 ),
                 inline=False
             )
-            embed.set_footer(text="MountAlgo WizardMember System")
-            await interaction.response.send_message(embed=embed, ephemeral=True)
-            return
-        # Jika sudah member
-        if "member" in roles:
-            embed = discord.Embed(
-                title="✅ STATUS MEMBER TERVERIFIKASI",
-                description="Kamu sudah **terverifikasi** sebagai member MountAlgo.\nTidak perlu verifikasi lagi, akses channel publik sudah terbuka.",
-                color=0x27ae60
+            embed.set_image(url="https://media.giphy.com/media/26ufnwz3wDUli7GU0/giphy.gif")
+            embed.set_footer(
+                text="MountAlgo | Trading Community",
+                icon_url=guild.me.display_avatar.url if guild.me else None
             )
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+
+        else:
+            # Jika sudah Admin
+            if "Admin" in roles:
+                embed = discord.Embed(
+                    title="🛡️ STATUS ADMIN",
+                    description="Kamu adalah **Admin** di server MountAlgo.\nAkses penuh ke seluruh fitur, kontrol pengguna, dan panel admin.\n\nTerima kasih atas kontribusimu menjaga komunitas!",
+                    color=0xffc300
+                )
+                embed.add_field(
+                    name="Hak Khusus Admin",
+                    value=(
+                        "• Mengelola pengguna & channel\n"
+                        "• Membuat/menutup sinyal\n"
+                        "• Reset konten penting\n"
+                        "• Akses penuh panel kontrol"
+                    ),
+                    inline=False
+                )
+                embed.set_footer(text="MountAlgo Admin System")
+                await interaction.response.send_message(embed=embed, ephemeral=True)
+                return
+
+            # Jika sudah WizardMember
+            if "WizardMemberBulanan" in roles:
+                embed = discord.Embed(
+                    title="💎 STATUS Wizard Member Bulanan",
+                    description="Kamu sudah **terverifikasi** dan **berlangganan WizardMember bulanan**.\nAkses premium aktif, nikmati seluruh fitur eksklusif MountAlgo!",
+                    color=0x5134ff
+                )
+                embed.add_field(
+                    name="Fitur Premium",
+                    value=(
+                        "• Wizard Toolkits: Alat Serbaguna\n"
+                        "• Wizard Analisis: Analisis Dari aset crypto forex dan komoditas yang mendalam \n"
+                        "• Wizard Setrategi : Strategi khusus yang dipacking sebaik mungkin untuk Strategi perdagangan di pasar crypto forex dan komoditas\n\n"
+                        "• Konsultasi prioritas\n"
+                        "• event eksklusif"
+                    ),
+                    inline=False
+                )
+                embed.set_footer(text="MountAlgo WizardMember System")
+                await interaction.response.send_message(embed=embed, ephemeral=True)
+                return
+
+            if "WizardMemberTahunan" in roles:
+                embed = discord.Embed(
+                    title="🏆 STATUS Wizard Member Tahunan",
+                    description="Kamu sudah **terverifikasi** dan **berlangganan WizardMember Tahunan**.\nAkses premium aktif, nikmati seluruh fitur eksklusif MountAlgo!",
+                    color=0x5134ff
+                )
+                embed.add_field(
+                    name="Fitur Premium",
+                    value=(
+                        "• Wizard Toolkits: Alat Serbaguna\n"
+                        "• Wizard Analisis: Analisis Dari aset crypto forex dan komoditas yang mendalam \n"
+                        "• Wizard Setrategi : Strategi khusus yang dipacking sebaik mungkin untuk Strategi perdagangan di pasar crypto forex dan komoditas\n\n"
+                        "• Konsultasi prioritas\n"
+                        "• event eksklusif"
+                    ),
+                    inline=False
+                )
+                embed.set_footer(text="MountAlgo WizardMember System")
+                await interaction.response.send_message(embed=embed, ephemeral=True)
+                return
+            # Jika sudah member
+            if "member" in roles:
+                embed = discord.Embed(
+                    title="✅ STATUS MEMBER TERVERIFIKASI",
+                    description="Kamu sudah **terverifikasi** sebagai member MountAlgo.\nTidak perlu verifikasi lagi, akses channel publik sudah terbuka.",
+                    color=0x27ae60
+                )
+                embed.add_field(
+                    name="Tips Member",
+                    value=(
+                        "• Aktif diskusi di #obrolan\n"
+                        "• Baca materi di #akademi\n"
+                        "• Upgrade ke WizardMember untuk fitur premium"
+                    ),
+                    inline=False
+                )
+                embed.set_footer(text="MountAlgo Member System")
+                await interaction.response.send_message(embed=embed, ephemeral=True)
+                return
+
+            # Jika belum punya role utama (auto verifikasi)
+            guild = interaction.guild
+            unverified_role = discord.utils.get(guild.roles, name="Unverified")
+            member_role = discord.utils.get(guild.roles, name="member")
+
+            # Hapus Unverified, tambahkan member
+            if unverified_role and unverified_role in user.roles:
+                await user.remove_roles(unverified_role)
+            if member_role and member_role not in user.roles:
+                await user.add_roles(member_role)
+
+            # Update database
+            try:
+                await VerificationSystem.verify_and_update_database(user)
+            except Exception as e:
+                print(f"Gagal update database: {e}")
+
+            # Kirim embed sangat menarik
+            embed = discord.Embed(
+                title="🎉 Selamat! Kamu Sudah Diverifikasi 🎉",
+                description=(
+                    "✨ **Akses Penuh Telah Dibuka!** ✨\n\n"
+                    "Kamu kini resmi menjadi bagian dari keluarga **MountAlgo**!\n"
+                    "Jelajahi berbagai fitur, diskusi, dan peluang trading bersama komunitas terbaik. 🚀\n\n"
+                    "Berikut beberapa langkah awal yang bisa kamu lakukan:"
+                ),
+                color=discord.Color.from_rgb(41, 128, 185)
+            )
+            embed.set_thumbnail(url=guild.me.display_avatar.url if guild.me else None)
             embed.add_field(
-                name="Tips Member",
+                name="📢 Channel Penting",
                 value=(
-                    "• Aktif diskusi di #obrolan\n"
-                    "• Baca materi di #akademi\n"
-                    "• Upgrade ke WizardMember untuk fitur premium"
+                    "• **#pengumuman** — Info terbaru & event\n"
+                    "• **#akademi** — Belajar trading dari nol\n"
+                    "• **#obrolan** — Diskusi bebas & sharing"
                 ),
                 inline=False
             )
-            embed.set_footer(text="MountAlgo Member System")
+            embed.add_field(
+                name="🔰 Tips Awal",
+                value=(
+                    "✅ Lengkapi profil Discord kamu\n"
+                    "✅ Perkenalkan diri di #perkenalan\n"
+                    "✅ Baca peraturan server di #peraturan\n"
+                    "✅ Jangan ragu bertanya, semua ramah!"
+                ),
+                inline=False
+            )
+            embed.add_field(
+                name="💡 Upgrade ke WizardMember?",
+                value=(
+                    "Nikmati tools eksklusif, dan konsultasi langsung dengan mentor!\n"
+                    "Segera Explore Room Wizard nya."
+                ),
+                inline=False
+            )
+            embed.set_image(url="https://media.giphy.com/media/26ufnwz3wDUli7GU0/giphy.gif")
+            embed.set_footer(
+                text="MountAlgo | Komunitas Trader Indonesia",
+                icon_url=guild.me.display_avatar.url if guild.me else None
+            )
             await interaction.response.send_message(embed=embed, ephemeral=True)
-            return
-
-        # Jika belum punya role utama (auto verifikasi)
-        guild = interaction.guild
-        unverified_role = discord.utils.get(guild.roles, name="Unverified")
-        member_role = discord.utils.get(guild.roles, name="member")
-
-        # Hapus Unverified, tambahkan member
-        if unverified_role and unverified_role in user.roles:
-            await user.remove_roles(unverified_role)
-        if member_role and member_role not in user.roles:
-            await user.add_roles(member_role)
-
-        # Update database (panggil fungsi dari VerificationSystem)
-        try:
-            from bot import VerificationSystem  # pastikan import sesuai struktur project kamu
-            await VerificationSystem.verify_and_update_database(user)
-        except Exception as e:
-            print(f"Gagal update database: {e}")
-
-        # Kirim embed sangat menarik
-        embed = discord.Embed(
-            title="🎉 Selamat! Kamu Sudah Diverifikasi 🎉",
-            description=(
-                "✨ **Akses Penuh Telah Dibuka!** ✨\n\n"
-                "Kamu kini resmi menjadi bagian dari keluarga **MountAlgo**!\n"
-                "Jelajahi berbagai fitur, diskusi, dan peluang trading bersama komunitas terbaik. 🚀\n\n"
-                "Berikut beberapa langkah awal yang bisa kamu lakukan:"
-            ),
-            color=discord.Color.from_rgb(41, 128, 185)
-        )
-        embed.set_thumbnail(url=channel.guild.me.display_avatar.url)
-        embed.add_field(
-            name="📢 Channel Penting",
-            value=(
-                "• **#pengumuman** — Info terbaru & event\n"
-                "• **#akademi** — Belajar trading dari nol\n"
-                "• **#obrolan** — Diskusi bebas & sharing"
-            ),
-            inline=False
-        )
-        embed.add_field(
-            name="🔰 Tips Awal",
-            value=(
-                "✅ Lengkapi profil Discord kamu\n"
-                "✅ Perkenalkan diri di #perkenalan\n"
-                "✅ Baca peraturan server di #peraturan\n"
-                "✅ Jangan ragu bertanya, semua ramah!"
-            ),
-            inline=False
-        )
-        embed.add_field(
-            name="💡 Upgrade ke WizardMember?",
-            value=(
-                "Nikmati tools eksklusif, dan konsultasi langsung dengan mentor!\n"
-                "Segera Explore Room Wizard nya."
-            ),
-            inline=False
-        )
-        embed.set_image(url="https://media.giphy.com/media/26ufnwz3wDUli7GU0/giphy.gif")
-        embed.set_footer(
-            text="MountAlgo | Komunitas Trader Indonesia",
-            icon_url=channel.guild.me.display_avatar.url
-        )
-        await interaction.response.send_message(embed=embed, ephemeral=True)
 
     @discord.ui.button(
         label="➮ Langganan Premium",
@@ -4204,139 +4675,264 @@ class VerifView(discord.ui.View):
     async def premium_subscribe(self, interaction: discord.Interaction, button: discord.ui.Button):
         user = interaction.user
         roles = [r.name for r in user.roles]
+        lang = await Database.get_user_language(user.id)
 
-        if "WizardMemberBulanan" in roles or "WizardMemberTahunan" in roles:
-            # Embed super menarik untuk WizardMember yang sudah langganan
+        if lang == "en":
+            if "WizardMemberBulanan" in roles or "WizardMemberTahunan" in roles:
+                embed = discord.Embed(
+                    title="💎 You are already a premium WizardMember!",
+                    description=(
+                        "Thank you for being part of **MountAlgo WizardMember**!\n\n"
+                        "🌟 **Your premium subscription is active.**\n"
+                        "Enjoy all exclusive features and unlimited premium access!\n\n"
+                        "If your subscription expires, you can renew it through this button."
+                    ),
+                    color=discord.Color.gold()
+                )
+                embed.set_thumbnail(url=interaction.guild.me.display_avatar.url)
+                embed.add_field(
+                    name="🚀 Premium Features You Enjoy",
+                    value=(
+                        "• Wizard Toolkits: Versatile Tools\n"
+                        "• Wizard Analysis: Deep analysis of crypto, forex, and commodity assets\n"
+                        "• Wizard Strategy: Carefully packaged strategies for trading in crypto, forex, and commodity markets\n\n"
+                        "• Priority consultation\n"
+                        "• Exclusive events"
+                    ),
+                    inline=False
+                )
+                embed.add_field(
+                    name="⏳ Renew Subscription?",
+                    value=(
+                        "You can renew your subscription after it expires.\n"
+                        "Monitor the expiration date in DMs or contact an admin if you need assistance."
+                    ),
+                    inline=False
+                )
+                embed.set_footer(
+                    text="MountAlgo Premium System | Thank you for being a WizardMember!",
+                    icon_url=interaction.guild.me.display_avatar.url
+                )
+                await interaction.response.send_message(embed=embed, ephemeral=True)
+                return
+
             embed = discord.Embed(
-                title="💎 Kamu Sudah Wizardmember premium (Wizard Member)!",
+                title="✚ MountAlgo Wizard MEMBERSHIP",
                 description=(
-                    "Terima kasih telah menjadi bagian dari **WizardMember MountAlgo**!\n\n"
-                    "🌟 **Langganan premium kamu masih aktif.**\n"
-                    "Nikmati seluruh fitur eksklusif dan akses premium tanpa batas!\n\n"
-                    "Jika masa langganan habis, kamu bisa memperpanjang kembali melalui tombol ini."
+                    "☛ Upgrade to WizardMember for Full Access\n"
+                    "Unlock all MountAlgo premium features and maximize your trading potential.\n"
+                    "▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n"
+                    "➩ Choose a subscription package below:"
                 ),
-                color=discord.Color.gold()
+                color=0x089981
             )
-            embed.set_thumbnail(url=interaction.guild.me.display_avatar.url)
+
+            def feature_bar(enabled=True):
+                bar = "▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰" if enabled else "▰▰▰▰▰▰▱▱▱▱▱▱▱▱▱"
+                return f"{'✔' if enabled else '✘'}  ●{bar}\n"
+
             embed.add_field(
-                name="🚀 Fitur Premium yang Kamu Nikmati",
+                name="❑ WizardMember FEATURES",
                 value=(
-                    "• Wizard Toolkits: Alat Serbaguna\n"                     
-                    "• Wizard Analisis: Analisis Dari aset crypto forex dan komoditas yang mendalam \n"                     
-                    "• Wizard Setrategi : Strategi khusus yang dipacking sebaik mungkin untuk Strategi perdagangan di pasar crypto forex dan komoditas\n\n"                     
-                    "• Konsultasi prioritas\n"                     
-                    "• event eksklusif"
+                    "```yaml\n"
+                    f"{feature_bar(True)} QuantumFlow™ Market Analysis\n"
+                    f"{feature_bar(True)} Wizard Toolkits: Versatile Tools\n"
+                    f"{feature_bar(True)} Wizard Analysis: Deep analysis of crypto, forex, and commodity assets\n"
+                    f"{feature_bar(True)} Wizard Strategy: Carefully packaged strategies for trading in crypto, forex, and commodity markets\n\n"
+                    f"{feature_bar(True)} Priority consultation\n"
+                    f"{feature_bar(True)} Exclusive events"
+                    "```"
                 ),
                 inline=False
             )
             embed.add_field(
-                name="⏳ Perpanjang Langganan?",
+                name="❑ STANDARD MEMBER FEATURES",
                 value=(
-                    "Kamu bisa memperpanjang langganan setelah masa aktifmu berakhir.\n"
-                    "Pantau tanggal kadaluwarsa di DM atau hubungi admin jika butuh bantuan."
+                    "```yaml\n"
+                    f"{feature_bar(False)} Limited access\n"
+                    f"{feature_bar(False)} No custom strategies\n"
+                    f"{feature_bar(False)} No advanced tools\n"
+                    f"{feature_bar(True)} Basic to professional education\n"
+                    f"{feature_bar(True)} Public community"
+                    "```"
                 ),
                 inline=False
             )
-            embed.set_image(url="https://media.giphy.com/media/l0MYt5jPR6QX5pnqM/giphy.gif")
+            embed.add_field(
+                name="⬈ SUBSCRIPTION FEES",
+                value=(
+                    "```yaml\n"
+                    "┌───────────────┬───────────────┐\n"
+                    "│ Package       │ Price         │\n"
+                    "├───────────────┼───────────────┤\n"
+                    "│ Monthly Wizard│ Rp 596,000/mo │\n"
+                    "│ Yearly Wizard │ Rp 5,803,000  │\n"
+                    "│ (Save 15%)    │               │\n"
+                    "└───────────────┴───────────────┘\n"
+                    "```\n"
+                    "➩ Note: After payment, verify payment in [#bantuan](https://discord.com/channels/SERVER_ID/1385294197497532426) / send proof directly to [Admin](https://discord.com/users/1210393702032347158)"
+                ),
+                inline=False
+            )
+            embed.add_field(
+                name="❑ LEGAL STATUS OF PAYMENT",
+                value=(
+                    "```diff\n"
+                    "➤ Transactions are payments for tool services and features under Wizard\n"
+                    "➤ NOT an investment or fund management\n"
+                    "➤ No guaranteed trading results\n"
+                    "➤ Excludes licensed financial services\n"
+                    "➤ Trading decisions are entirely independent\n"
+                    "```"
+                ),
+                inline=False
+            )
             embed.set_footer(
-                text="MountAlgo Premium System | Terima kasih telah menjadi WizardMember!",
-                icon_url=interaction.guild.me.display_avatar.url
+                text="MountAlgo Trading Community ● Premium Features Updated Oct 2025 (press Dismiss Message to clear)"
             )
-            await interaction.response.send_message(embed=embed, ephemeral=True)
+            payment_button = Button(
+                style=discord.ButtonStyle.success,
+                label="⬈ Pay Now",
+                url=DANA_PAYMENT_LINK
+            )
+            view = View(timeout=None)
+            view.add_item(payment_button)
+            await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
             return
 
-        embed = discord.Embed(
-            title="✚ KEANGGOTAAN Wizard MountAlgo",
-            description=(
-                "☛ Tingkatkan ke WizardMember untuk Akses Penuh\n"
-                "Buka semua fitur premium MountAlgo dan maksimalkan potensi perdagangan Anda.\n"
-                "▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n"
-                "➩ Pilih paket langganan di bawah ini:"
-            ),
-            color=0x089981  # Hijau negatif
-        )
-        
-        # Fungsi untuk membuat bar fitur
-        def feature_bar(enabled=True, length=15):
-            bar = "▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰" if enabled else "▰▰▰▰▰▰▱▱▱▱▱▱▱▱▱"
-            return f"{'✔' if enabled else '✘'}  ●{bar}\n"
+        else:
+            if "WizardMemberBulanan" in roles or "WizardMemberTahunan" in roles:
+                # Embed super menarik untuk WizardMember yang sudah langganan
+                embed = discord.Embed(
+                    title="💎 Kamu Sudah Wizardmember premium (Wizard Member)!",
+                    description=(
+                        "Terima kasih telah menjadi bagian dari **WizardMember MountAlgo**!\n\n"
+                        "🌟 **Langganan premium kamu masih aktif.**\n"
+                        "Nikmati seluruh fitur eksklusif dan akses premium tanpa batas!\n\n"
+                        "Jika masa langganan habis, kamu bisa memperpanjang kembali melalui tombol ini."
+                    ),
+                    color=discord.Color.gold()
+                )
+                embed.set_thumbnail(url=interaction.guild.me.display_avatar.url)
+                embed.add_field(
+                    name="🚀 Fitur Premium yang Kamu Nikmati",
+                    value=(
+                        "• Wizard Toolkits: Alat Serbaguna\n"
+                        "• Wizard Analisis: Analisis Dari aset crypto forex dan komoditas yang mendalam \n"
+                        "• Wizard Setrategi : Strategi khusus yang dipacking sebaik mungkin untuk Strategi perdagangan di pasar crypto forex dan komoditas\n\n"
+                        "• Konsultasi prioritas\n"
+                        "• event eksklusif"
+                    ),
+                    inline=False
+                )
+                embed.add_field(
+                    name="⏳ Perpanjang Langganan?",
+                    value=(
+                        "Kamu bisa memperpanjang langganan setelah masa aktifmu berakhir.\n"
+                        "Pantau tanggal kadaluwarsa di DM atau hubungi admin jika butuh bantuan."
+                    ),
+                    inline=False
+                )
+                embed.set_image(url="https://media.giphy.com/media/l0MYt5jPR6QX5pnqM/giphy.gif")
+                embed.set_footer(
+                    text="MountAlgo Premium System | Terima kasih telah menjadi WizardMember!",
+                    icon_url=interaction.guild.me.display_avatar.url
+                )
+                await interaction.response.send_message(embed=embed, ephemeral=True)
+                return
 
-        # Fitur untuk WizardMember
-        embed.add_field(
-            name="❑ FITUR WizardMember",
-            value=(
-                "```yaml\n"
-                f"{feature_bar(True)} Analisis Pasar QuantumFlow™\n"
-                f"{feature_bar(True)} Wizard Toolkits: Alat Serbaguna\n"                     
-                f"{feature_bar(True)} Wizard Analisis: Analisis Dari aset crypto forex dan komoditas yang mendalam \n"                     
-                f"{feature_bar(True)} Wizard Setrategi : Strategi khusus yang dipacking sebaik mungkin untuk Strategi perdagangan di pasar crypto forex dan komoditas\n\n"                     
-                f"{feature_bar(True)} Konsultasi prioritas\n"                     
-                f"{feature_bar(True)} event eksklusif"
-                "```"
-            ),
-            inline=False
-        )
-        
-        # Fitur untuk Anggota Biasa
-        embed.add_field(
-            name="❑ FITUR ANGGOTA BIASA",
-            value=(
-                "```yaml\n"
-                f"{feature_bar(False)} Akses terbatas\n"
-                f"{feature_bar(False)} Tanpa strategi khusus\n"
-                f"{feature_bar(False)} Tanpa alat cang\n"
-                f"{feature_bar(True)} Edukasi dasar hingga profesional\n"
-                f"{feature_bar(True)} Komunitas publik\n"
-                "```"
-            ),
-            inline=False
-        )
-        
-        # Paket Harga
-        embed.add_field(
-            name="⬈ BIAYA LANGGANAN",
-            value=(
-                "```yaml\n"
-                "┌───────────────┬───────────────┐\n"
-                "│ Paket         │ Harga         │\n"
-                "├───────────────┼───────────────┤\n"
-                "│ Wizard Bulanan │ Rp 596.000/bln│\n"
-                "│ Wizard Tahunan │ Rp 5.803.000  │\n"
-                "│ (Hemat 15%)   │               │\n"
-                "└───────────────┴───────────────┘\n"
-                "```\n"
-                "➩ Catatan: Setelah pembayaran, lakukan verifikasi Pembayaran di kanal [#bantuan](https://discord.com/channels/SERVER_ID/1385294197497532426) / langsung Kirim bukti Pembayaran pada [Admin](https://discord.com/users/1210393702032347158)"
-            ),
-            inline=False
-        )
-        embed.add_field(
-            name="❑ STATUS HUKUM PEMBAYARAN",
-            value=(
-                "```diff\n"
-                "➤ Transaksi merupakan pembayaran jasa Alat serta apa yang ada pada fitur Wizard\n"
-                "➤ BUKAN investasi atau pengelolaan dana\n"
-                "➤ Tidak ada jaminan hasil trading\n"
-                "➤ Tidak termasuk layanan finansial berizin\n"
-                "➤ Keputusan trading sepenuhnya mandiri\n"
-                "```"
-            ),
-            inline=False
-        )
-        embed.set_footer(
-            text="Komunitas Trading MountAlgo ● Fitur Premium Diperbarui oktobrr 2025 (tekan Dismiss Message Untuk menghapus Pesan"
-        )
-        
-        # Tombol Aksi
-        payment_button = Button(
-            style=discord.ButtonStyle.success,
-            label="⬈ Bayar Sekarang",
-            url=DANA_PAYMENT_LINK
-        )
+            embed = discord.Embed(
+                title="✚ KEANGGOTAAN Wizard MountAlgo",
+                description=(
+                    "☛ Tingkatkan ke WizardMember untuk Akses Penuh\n"
+                    "Buka semua fitur premium MountAlgo dan maksimalkan potensi perdagangan Anda.\n"
+                    "▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n"
+                    "➩ Pilih paket langganan di bawah ini:"
+                ),
+                color=0x089981  # Hijau negatif
+            )
 
-        view = View(timeout=None)
-        view.add_item(payment_button)
+            # Fungsi untuk membuat bar fitur
+            def feature_bar(enabled=True, length=15):
+                bar = "▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰" if enabled else "▰▰▰▰▰▰▱▱▱▱▱▱▱▱▱"
+                return f"{'✔' if enabled else '✘'}  ●{bar}\n"
 
-        await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
+            # Fitur untuk WizardMember
+            embed.add_field(
+                name="❑ FITUR WizardMember",
+                value=(
+                    "```yaml\n"
+                    f"{feature_bar(True)} Analisis Pasar QuantumFlow™\n"
+                    f"{feature_bar(True)} Wizard Toolkits: Alat Serbaguna\n"
+                    f"{feature_bar(True)} Wizard Analisis: Analisis Dari aset crypto forex dan komoditas yang mendalam \n"
+                    f"{feature_bar(True)} Wizard Setrategi : Strategi khusus yang dipacking sebaik mungkin untuk Strategi perdagangan di pasar crypto forex dan komoditas\n\n"
+                    f"{feature_bar(True)} Konsultasi prioritas\n"
+                    f"{feature_bar(True)} event eksklusif"
+                    "```"
+                ),
+                inline=False
+            )
+
+            # Fitur untuk Anggota Biasa
+            embed.add_field(
+                name="❑ FITUR ANGGOTA BIASA",
+                value=(
+                    "```yaml\n"
+                    f"{feature_bar(False)} Akses terbatas\n"
+                    f"{feature_bar(False)} Tanpa strategi khusus\n"
+                    f"{feature_bar(False)} Tanpa alat cang\n"
+                    f"{feature_bar(True)} Edukasi dasar hingga profesional\n"
+                    f"{feature_bar(True)} Komunitas publik\n"
+                    "```"
+                ),
+                inline=False
+            )
+
+            # Paket Harga
+            embed.add_field(
+                name="⬈ BIAYA LANGGANAN",
+                value=(
+                    "```yaml\n"
+                    "┌───────────────┬───────────────┐\n"
+                    "│ Paket         │ Harga         │\n"
+                    "├───────────────┼───────────────┤\n"
+                    "│ Wizard Bulanan │ Rp 596.000/bln│\n"
+                    "│ Wizard Tahunan │ Rp 5.803.000  │\n"
+                    "│ (Hemat 15%)   │               │\n"
+                    "└───────────────┴───────────────┘\n"
+                    "```\n"
+                    "➩ Catatan: Setelah pembayaran, lakukan verifikasi Pembayaran di kanal [#bantuan](https://discord.com/channels/SERVER_ID/1385294197497532426) / langsung Kirim bukti Pembayaran pada [Admin](https://discord.com/users/1210393702032347158)"
+                ),
+                inline=False
+            )
+            embed.add_field(
+                name="❑ STATUS HUKUM PEMBAYARAN",
+                value=(
+                    "```diff\n"
+                    "➤ Transaksi merupakan pembayaran jasa Alat serta apa yang ada pada fitur Wizard\n"
+                    "➤ BUKAN investasi atau pengelolaan dana\n"
+                    "➤ Tidak ada jaminan hasil trading\n"
+                    "➤ Tidak termasuk layanan finansial berizin\n"
+                    "➤ Keputusan trading sepenuhnya mandiri\n"
+                    "```"
+                ),
+                inline=False
+            )
+            embed.set_footer(
+                text="Komunitas Trading MountAlgo ● Fitur Premium Diperbarui oktobrr 2025 (tekan Dismiss Message Untuk menghapus Pesan"
+            )
+
+            # Tombol Aksi
+            payment_button = Button(
+                style=discord.ButtonStyle.success,
+                label="⬈ Bayar Sekarang",
+                url=DANA_PAYMENT_LINK
+            )
+
+            view = View(timeout=None)
+            view.add_item(payment_button)
+
+            await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
 
 # --- Bantuan ---
 class BantuanView(View):
@@ -4349,42 +4945,50 @@ class BantuanView(View):
         try:
             user_id = interaction.user.id
             guild = interaction.guild
+            lang = await Database.get_user_language(user_id)
 
             # Ambil data user dari database
             user_data = await Database.get_user_data(user_id)
             if not user_data:
-                await interaction.response.send_message(
-                    "❌ Data Anda belum terdaftar di sistem. Silakan klik **Verifikasi** dulu di channel `#verifikasi`.",
-                    ephemeral=True
+                err_msg = (
+                    "❌ Your data is not registered in the system yet. Please click **Verify** first in `#verifikasi`." if lang == "en"
+                    else "❌ Data Anda belum terdaftar di sistem. Silakan klik **Verifikasi** dulu di channel `#verifikasi`."
                 )
+                await interaction.response.send_message(err_msg, ephemeral=True)
                 return
 
             user_id, username, status, sub_type, expiry = user_data
-            role_display = "👤 Member Biasa"
+
+            if lang == "en":
+                role_display = "👤 Standard Member"
+                subscription_label = "Inactive"
+            else:
+                role_display = "👤 Member Biasa"
+                subscription_label = "Tidak Aktif"
+
             color = discord.Color.blue()
             expiry_text = "-"
-            subscription_label = "Tidak Aktif"
 
             # --- Tentukan status dan role ---
             if status == "WizardMemberBulanan":
-                role_display = "💎 **Wizard Member Bulanan**"
+                role_display = "💎 **Monthly Wizard Member**" if lang == "en" else "💎 **Wizard Member Bulanan**"
                 color = discord.Color.gold()
-                subscription_label = "Bulanan (30 Hari)"
+                subscription_label = "Monthly (30 Days)" if lang == "en" else "Bulanan (30 Hari)"
                 if expiry:
                     expiry_text = format_wib(expiry)
             elif status == "WizardMemberTahunan":
-                role_display = "👑 **Wizard Member Tahunan**"
+                role_display = "👑 **Yearly Wizard Member**" if lang == "en" else "👑 **Wizard Member Tahunan**"
                 color = discord.Color.purple()
-                subscription_label = "Tahunan (365 Hari)"
+                subscription_label = "Yearly (365 Days)" if lang == "en" else "Tahunan (365 Hari)"
                 if expiry:
                     expiry_text = format_wib(expiry)
             elif status == "Admin":
-                role_display = "⚙️ **Admin MountAlgo**"
+                role_display = "⚙️ **MountAlgo Admin**" if lang == "en" else "⚙️ **Admin MountAlgo**"
                 color = discord.Color.red()
-                subscription_label = "Tidak Terbatas"
+                subscription_label = "Unlimited" if lang == "en" else "Tidak Terbatas"
                 expiry_text = "-"
             else:
-                role_display = "👤 **Member Biasa**"
+                role_display = "👤 **Standard Member**" if lang == "en" else "👤 **Member Biasa**"
                 color = discord.Color.blurple()
 
             # --- Cek Role Discord Langsung ---
@@ -4392,51 +4996,108 @@ class BantuanView(View):
             active_roles = ", ".join([r.name for r in member.roles if r.name != "@everyone"])
 
             # --- Buat Embed ---
-            embed = discord.Embed(
-                title="📋 STATUS LANGGANAN ANDA",
-                description=f"Informasi terkini status akun MountAlgo Anda.",
-                color=color
-            )
-            embed.add_field(name="👤 Nama Pengguna", value=f"`{interaction.user.display_name}`", inline=True)
-            embed.add_field(name="🆔 ID", value=f"`{user_id}`", inline=True)
-            embed.add_field(name="📜 Status", value=role_display, inline=False)
-            embed.add_field(name="🕒 Jenis Langganan", value=subscription_label, inline=True)
-            embed.add_field(name="⏳ Berlaku Sampai", value=expiry_text or "-", inline=True)
-            embed.add_field(name="🎭 Role Discord Aktif", value=active_roles or "-", inline=False)
-            embed.set_footer(text="MountAlgo Premium System — Cek status langganan Anda kapan pun.")
+            if lang == "en":
+                embed = discord.Embed(
+                    title="📋 YOUR SUBSCRIPTION STATUS",
+                    description=f"Current status of your MountAlgo account.",
+                    color=color
+                )
+                embed.add_field(name="👤 Username", value=f"`{interaction.user.display_name}`", inline=True)
+                embed.add_field(name="🆔 ID", value=f"`{user_id}`", inline=True)
+                embed.add_field(name="📜 Status", value=role_display, inline=False)
+                embed.add_field(name="🕒 Subscription Type", value=subscription_label, inline=True)
+                embed.add_field(name="⏳ Valid Until", value=expiry_text or "-", inline=True)
+                embed.add_field(name="🎭 Active Discord Roles", value=active_roles or "-", inline=False)
+                embed.set_footer(text="MountAlgo Premium System — Check your subscription status anytime.")
+            else:
+                embed = discord.Embed(
+                    title="📋 STATUS LANGGANAN ANDA",
+                    description=f"Informasi terkini status akun MountAlgo Anda.",
+                    color=color
+                )
+                embed.add_field(name="👤 Nama Pengguna", value=f"`{interaction.user.display_name}`", inline=True)
+                embed.add_field(name="🆔 ID", value=f"`{user_id}`", inline=True)
+                embed.add_field(name="📜 Status", value=role_display, inline=False)
+                embed.add_field(name="🕒 Jenis Langganan", value=subscription_label, inline=True)
+                embed.add_field(name="⏳ Berlaku Sampai", value=expiry_text or "-", inline=True)
+                embed.add_field(name="🎭 Role Discord Aktif", value=active_roles or "-", inline=False)
+                embed.set_footer(text="MountAlgo Premium System — Cek status langganan Anda kapan pun.")
 
             await interaction.response.send_message(embed=embed, ephemeral=True)
 
         except Exception as e:
             logging.error(f"Error di tombol cek_langganan: {e}", exc_info=True)
-            await interaction.response.send_message(
-                "❌ Terjadi kesalahan saat memeriksa status langganan Anda.",
-                ephemeral=True
+            err_fail = (
+                "❌ An error occurred while checking your subscription status." if lang == "en"
+                else "❌ Terjadi kesalahan saat memeriksa status langganan Anda."
             )
+            await interaction.response.send_message(err_fail, ephemeral=True)
 
     @discord.ui.button(label="❑ FAQ", style=discord.ButtonStyle.secondary, custom_id="bantuan_faq")
     async def faq(self, interaction: discord.Interaction, button: Button):
-        embed = send_faq_embed()
+        lang = await Database.get_user_language(interaction.user.id)
+        if lang == "en":
+            embed = discord.Embed(
+                title="⦿ MountAlgo FREQUENTLY ASKED QUESTIONS",
+                description=(
+                    "▰▰▰▰▰▰▰▰▰▰▰▰▰\n"
+                    "Collection of frequently asked questions and answers in the MountAlgo community.\n"
+                    "**Read carefully before asking the admin!**\n"
+                    "▰▰▰▰▰▰▰▰▰▰▰▰▰"
+                ),
+                color=0x5865F2
+            )
+            embed.add_field(
+                name="▸ 01. WHAT IS MountAlgo?",
+                value="\n➤ MountAlgo is an online trading community for:\n‣ Professional trading education\n‣ Financial market discussion\n‣ Sharing trading signals (forex/crypto/commodity)\n➤ All levels of traders are welcome to join\n▰▰▰▰▰▰▰▰▰▰▰▰▰▰",
+                inline=False
+            )
+            embed.add_field(
+                name="▸ 02. INVESTMENT & FUND MANAGEMENT",
+                value="✘ MountAlgo **IS NOT** an investment company\n✘ Does **NOT** accept member funds\n✘ Does **NOT** offer fund management services\n✔ All content is for educational purposes only\n▰▰▰▰▰▰▰▰▰▰▰▰▰▰",
+                inline=False
+            )
+        else:
+            embed = send_faq_embed()
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
     @discord.ui.button(label="✔ Verifikasi Langganan", style=discord.ButtonStyle.primary, custom_id="bantuan_langganan")
     async def verif_langganan(self, interaction: discord.Interaction, button: Button):
-        embed = discord.Embed(
-            title="➮ PANDUAN VERIFIKASI KEANGGOTAAN Wizard",
-            color=0x089981,  # Hijau negatif
-            description=(
-                "☛ Langkah-langkah untuk Mengaktifkan Keanggotaan Wizard\n"
-                "▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n"
-                f"1. Transfer biaya langganan melalui [DANA / CRYPTO Payment]({DANA_PAYMENT_LINK}).\n"
-                "2. Kirim bukti pembayaran beserta Id discord anda ke admin dengan menekan tombol hubungi admin di kanal #bantuan.\n"
-                "3. Tunggu konfirmasi dan peningkatan peran ke WizardMember.\n"
-                "▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n"
-                "➩ Jika mengalami kendala, gunakan  juga tombol Hubungi Admin Untuk permasalahan tersebut."
+        lang = await Database.get_user_language(interaction.user.id)
+        if lang == "en":
+            embed = discord.Embed(
+                title="➮ Wizard MEMBERSHIP VERIFICATION GUIDE",
+                color=0x089981,
+                description=(
+                    "☛ Steps to Activate Your Wizard Membership\n"
+                    "▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n"
+                    f"1. Transfer the subscription fee via [DANA / CRYPTO Payment]({DANA_PAYMENT_LINK}).\n"
+                    "2. Send proof of payment with your Discord ID to admin by pressing the Contact Admin button in #bantuan.\n"
+                    "3. Wait for confirmation and upgrade to WizardMember.\n"
+                    "▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n"
+                    "➩ If you have any problems, use the Contact Admin button as well."
+                )
             )
-        )
-        embed.set_footer(
-            text="Komunitas Trading MountAlgo ● Panduan Keanggotaan Wizard (tekan Dismiss Message Untuk menghapus Pesan"
-        )
+            embed.set_footer(
+                text="MountAlgo Trading Community ● Wizard Membership Guide (press Dismiss Message to clear)"
+            )
+        else:
+            embed = discord.Embed(
+                title="➮ PANDUAN VERIFIKASI KEANGGOTAAN Wizard",
+                color=0x089981,  # Hijau negatif
+                description=(
+                    "☛ Langkah-langkah untuk Mengaktifkan Keanggotaan Wizard\n"
+                    "▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n"
+                    f"1. Transfer biaya langganan melalui [DANA / CRYPTO Payment]({DANA_PAYMENT_LINK}).\n"
+                    "2. Kirim bukti pembayaran beserta Id discord anda ke admin dengan menekan tombol hubungi admin di kanal #bantuan.\n"
+                    "3. Tunggu konfirmasi dan peningkatan peran ke WizardMember.\n"
+                    "▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n"
+                    "➩ Jika mengalami kendala, gunakan  juga tombol Hubungi Admin Untuk permasalahan tersebut."
+                )
+            )
+            embed.set_footer(
+                text="Komunitas Trading MountAlgo ● Panduan Keanggotaan Wizard (tekan Dismiss Message Untuk menghapus Pesan"
+            )
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
     @discord.ui.button(label="● Hubungi Admin", style=discord.ButtonStyle.success, custom_id="bantuan_admin")
@@ -5141,6 +5802,21 @@ class KontrolPenggunaView(discord.ui.View):
         await interaction.response.send_modal(UpgradeUserModal())
 
     @discord.ui.button(
+        label="Sinkronkan User sesuai Roles",
+        style=discord.ButtonStyle.secondary,
+        custom_id="user_sync_roles",
+        emoji="🔄"
+    )
+    async def sinkronkan_user_roles(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.defer(ephemeral=True, thinking=True)
+        try:
+            result = await synchronize_users_and_roles(interaction.guild)
+            await interaction.followup.send(f"✅ {result}", ephemeral=True)
+        except Exception as e:
+            logging.error(f"Error sinkronkan user roles: {e}", exc_info=True)
+            await interaction.followup.send(f"❌ Terjadi kesalahan saat sinkronisasi:\n`{e}`", ephemeral=True)
+
+    @discord.ui.button(
         label="Lihat Status",
         style=discord.ButtonStyle.primary,
         emoji="📋",
@@ -5459,6 +6135,157 @@ class KontrolAdminView(discord.ui.View):
             await interaction.response.send_message("❌ Hanya admin yang dapat menggunakan tombol ini.", ephemeral=True)
             return
         await interaction.response.send_modal(WizardEmbedModal())
+
+    # ------------------------------------------------------
+    # 🔄 Tombol: Setting Up Ulang
+    # ------------------------------------------------------
+    @discord.ui.button(
+        label="🔄 Setting Up Ulang",
+        style=discord.ButtonStyle.danger,
+        custom_id="admin_setup_ulang",
+        row=4
+    )
+    async def setup_ulang_server(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if not interaction.user.guild_permissions.administrator:
+            await interaction.response.send_message("❌ Hanya admin yang dapat menggunakan tombol ini.", ephemeral=True)
+            return
+
+        await interaction.response.defer(ephemeral=True, thinking=True)
+
+        admin = interaction.user
+        guild = interaction.guild
+        start_time = datetime.now(jakarta_tz)
+        errors = []
+
+        async def safe_update(content: str, critical=False):
+            sent = False
+            try:
+                msg = f"🚨 {content}" if critical else f"ℹ️ {content}"
+                await interaction.followup.send(msg, ephemeral=True)
+                sent = True
+            except Exception:
+                pass
+
+            try:
+                msg = f"🚨 {content}" if critical else f"ℹ️ {content}"
+                await admin.send(msg)
+                sent = True
+            except Exception:
+                pass
+
+            try:
+                laporan_ch = discord.utils.get(guild.text_channels, name="laporan")
+                if laporan_ch:
+                    msg = f"🚨 {content}" if critical else f"ℹ️ {content}"
+                    await laporan_ch.send(msg)
+                    sent = True
+            except Exception:
+                pass
+
+            return sent
+
+        await safe_update("🏗️ **Memulai setup server...** (`Proses bisa memakan waktu ±3 menit`)")
+
+        current_step = ""
+        try:
+            # Step 1: Inisialisasi server
+            current_step = "Setup struktur server"
+            await safe_update("🛠️ Memulai inisialisasi struktur server...")
+            try:
+                server_result = await asyncio.wait_for(
+                    ServerBuilder.setup_server(guild),
+                    timeout=300
+                )
+                await safe_update(f"✅ Struktur server selesai!")
+            except asyncio.TimeoutError:
+                await safe_update("⚠️ Waktu setup server habis! Lanjut ke penerapan izin...", True)
+
+            # Step 2: Terapkan izin channel
+            current_step = "Penerapan izin channel"
+            await safe_update("🔐 Menerapkan izin channel...")
+            success_count, error_count, permission_errors = await apply_channel_permissions(guild)
+            if permission_errors:
+                errors.extend(permission_errors)
+
+            # Step 3: Sinkronisasi database
+            current_step = "Sinkronisasi user & role"
+            await safe_update("🔄 Memulai sinkronisasi user dan role...")
+            sync_report = await synchronize_users_and_roles(guild)
+
+            # Step 4: Kirim konten ke roadmap_trader
+            current_step = "Pengiriman roadmap trader"
+            await safe_update("📝 Mengirim konten ke channel roadmap_trader...")
+            roadmap_channel = discord.utils.get(guild.text_channels, name="roadmap_trader")
+            if not roadmap_channel:
+                await safe_update("⚠️ Channel #roadmap_trader tidak ditemukan, membuat secara manual...", True)
+                nexus_category = discord.utils.get(guild.categories, name="🔥|NEXUS HUB|") or await guild.create_category("🔥|NEXUS HUB|")
+                roadmap_channel = await guild.create_text_channel(
+                    name="roadmap_trader",
+                    category=nexus_category,
+                    topic="Perjalanan seorang trader yang berkelanjutan",
+                    position=3,
+                    overwrites={guild.default_role: discord.PermissionOverwrite(read_messages=True)}
+                )
+
+            try:
+                await send_roadmap_trader(roadmap_channel)
+                await safe_update("✅ Konten roadmap trader berhasil dikirim!")
+            except Exception as e:
+                error_msg = f"Gagal mengirim konten roadmap trader: {str(e)}"
+                errors.append(error_msg)
+                await safe_update(error_msg, True)
+
+            # Step 5: Setup thread analisis
+            try:
+                current_step = "Setup thread analisis"
+                channel = discord.utils.get(guild.text_channels, name="wizard-analisis")
+                if channel:
+                    created_threads = await create_analysis_threads(channel)
+                    if created_threads:
+                        await safe_update(f"✅ Thread Wizard Analisis dibuat: {', '.join(created_threads)}")
+                        await sync_members_to_threads(guild)
+            except Exception as e:
+                error_msg = f"Gagal setup thread: {str(e)}"
+                errors.append(error_msg)
+                await safe_update(error_msg, True)
+
+            duration = (datetime.now(jakarta_tz) - start_time).total_seconds()
+            await safe_update(f"🟢 Semua proses setup selesai! Durasi: {duration:.1f} detik")
+
+        except Exception as step_error:
+            error_msg = f"🔥 **GAGAL** pada langkah `{current_step}`: {str(step_error)}"
+            errors.append(error_msg)
+            await safe_update(error_msg, True)
+
+        # 5. Buat laporan akhir
+        try:
+            duration = (datetime.now(jakarta_tz) - start_time).total_seconds()
+            result_message = [
+                f"## 🤖 Laporan Setup Server",
+                f"**Server**: {guild.name}",
+                f"**Admin**: {admin.mention}",
+                f"**Durasi**: {duration:.2f} detik",
+                f"**Selesai**: <t:{int(time.time())}:R>",
+                ""
+            ]
+            if 'sync_report' in locals():
+                result_message.append("### 🔄 Sinkronisasi User/Role")
+                result_message.append(f"```\n{sync_report}\n```")
+            result_message.append(f"### 🔓 Izin Channel")
+            result_message.append(f"Channel berhasil: **{success_count}**")
+            result_message.append(f"Error izin: **{error_count}**")
+            if errors:
+                result_message.append("### 🚨 Error yang Terjadi")
+                for i, error in enumerate(errors[:5]):
+                    result_message.append(f"{i+1}. {error}")
+
+            full_report = "\n".join(result_message)
+            if len(full_report) > 2000:
+                full_report = full_report[:1900] + "\n... [laporan dipotong]"
+            await safe_update(full_report)
+        except Exception as report_error:
+            logging.error(f"Gagal mengirim laporan akhir: {report_error}")
+
 # ==========================================================
 # 💾 EXPORT DATA VIEW (DENGAN FITUR ZIP SEMUA DATA)
 # ==========================================================
@@ -7756,6 +8583,7 @@ async def on_ready():
     # =====================
     # 4️⃣ REGISTER VIEW
     # =====================
+    bot.add_view(WelcomeButtonView())
     bot.add_view(VerifView())
     bot.add_view(BantuanView())
     bot.add_view(ObrolanView())
