@@ -1622,11 +1622,15 @@ SERVER_STRUCTURE = [
         ("akademi", "Materi edukasi trading.", ["@member", "@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"]),
         ("free-indikator", "Indikator gratis yang dikembangkan MountAlgo.", ["@member", "@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"]),
         ("share-your-profits", "Bagikan profit kamu dengan Semua member.", ["@member","@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"]),
+        ("member-voice", "Ruang obrolan suara antar anggota.", ["@member", "@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"], "voice"),
+        ("member-stage", "Panggung utama diskusi panel & event komunitas.", ["@member", "@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"], "stage"),
     ]),
     ("🧬|WIZARD|🚀🚀", ["@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"], [
         ("wizard-toolkits", "Tools bantu strategi trading personal.", ["@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"]),
         ("wizard-strategy", "Kumpulan strategi trading  yang sudah di packing.", ["@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"]),
         ("wizard-analisis", "Analisis market harian berkualitas tinggi.", ["@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"]),
+        ("wizard-voice", "Ruang obrolan suara eksklusif Wizard Member.", ["@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"], "voice"),
+        ("wizard-stage", "Panggung live sesi analisis & edukasi premium.", ["@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"], "stage"),
     ]),
     ("🧩|CYPHER|", ["@Admin"], [
         ("kontrol-admin", "Pengaturan admin, hak akses, dan kontrol server.", ["@Admin"]),
@@ -7682,7 +7686,9 @@ class ServerBuilder:
                 
                 # Buat channel di dalam kategori
                 for channel_config in channels:
-                    channel_name, description, channel_roles = channel_config
+                    channel_name = channel_config[0]
+                    description = channel_config[1]
+                    channel_roles = channel_config[2]
                     try:
                         # Salin overwrites dari kategori
                         channel_overwrites = overwrites.copy()
@@ -7703,12 +7709,26 @@ class ServerBuilder:
                                             channel_overwrites[role] = perm_overwrite
                                     
                         # Buat channel
-                        channel = await category.create_text_channel(
-                            channel_name,
-                            topic=description,
-                            overwrites=channel_overwrites,
-                            reason="Auto setup"
-                        )
+                        ch_type = channel_config[3] if len(channel_config) > 3 else "text"
+                        if ch_type == "voice":
+                            channel = await category.create_voice_channel(
+                                channel_name,
+                                overwrites=channel_overwrites,
+                                reason="Auto setup"
+                            )
+                        elif ch_type == "stage":
+                            channel = await category.create_stage_channel(
+                                channel_name,
+                                overwrites=channel_overwrites,
+                                reason="Auto setup"
+                            )
+                        else:
+                            channel = await category.create_text_channel(
+                                channel_name,
+                                topic=description,
+                                overwrites=channel_overwrites,
+                                reason="Auto setup"
+                            )
                         stats["channels_created"] += 1
                         
                         # Simpan ke mapping
@@ -7767,6 +7787,15 @@ class ServerBuilder:
                 stats["errors"] += 1
                 logging.warning(f"Gagal hapus voice channel {voice_channel.name}: {str(e)}")
 
+        # Hapus semua stage channel
+        for stage_channel in guild.stage_channels:
+            try:
+                await stage_channel.delete(reason="Cleaning for server setup")
+                await asyncio.sleep(0.2)
+            except Exception as e:
+                stats["errors"] += 1
+                logging.warning(f"Gagal hapus stage channel {stage_channel.name}: {str(e)}")
+
     @staticmethod
     async def initialize_channel_content(guild: discord.Guild, channel_map: dict):
         """Isi konten awal untuk channel khusus"""
@@ -7820,7 +7849,8 @@ class ServerBuilder:
         all_roles = set()
         for kategori, roles, channels in SERVER_STRUCTURE:
             all_roles.update([r for r in roles if r != "@everyone"])
-            for _, _, ch_roles in channels:
+            for ch_info in channels:
+                ch_roles = ch_info[2]
                 all_roles.update([r for r in ch_roles if r != "@everyone"])
         for role_name in all_roles:
             await cls.get_or_create_role(guild, role_name)
@@ -7835,7 +7865,10 @@ class ServerBuilder:
                     if role:
                         overwrites[role] = discord.PermissionOverwrite(read_messages=True)
             category = await guild.create_category(kategori, overwrites=overwrites)
-            for ch_name, desc, ch_roles in channels:
+            for ch_info in channels:
+                ch_name = ch_info[0]
+                desc = ch_info[1]
+                ch_roles = ch_info[2]
                 ch_overwrites = overwrites.copy()
                 for role_name in ch_roles:
                     if role_name == "@everyone":
@@ -7844,7 +7877,13 @@ class ServerBuilder:
                         role = cls.get_role(guild, role_name)
                         if role:
                             ch_overwrites[role] = discord.PermissionOverwrite(read_messages=True)
-                ch = await guild.create_text_channel(ch_name, category=category, overwrites=ch_overwrites, topic=desc)
+                ch_type = ch_info[3] if len(ch_info) > 3 else "text"
+                if ch_type == "voice":
+                    ch = await category.create_voice_channel(ch_name, overwrites=ch_overwrites)
+                elif ch_type == "stage":
+                    ch = await category.create_stage_channel(ch_name, overwrites=ch_overwrites)
+                else:
+                    ch = await guild.create_text_channel(ch_name, category=category, overwrites=ch_overwrites, topic=desc)
                 channel_map[ch_name] = ch
         if "welcome" in channel_map:
             await send_welcome_embed(channel_map["welcome"])
@@ -9107,7 +9146,9 @@ class CategoryMaintainer(commands.Cog):
     async def ensure_categories(self):
         """Loop setiap 10 menit untuk memastikan kategori & channel tetap aktif."""
         for guild in self.bot.guilds:
-            for cat_name, channels in SERVER_STRUCTURE.items():
+            for cat_config in SERVER_STRUCTURE:
+                cat_name = cat_config[0]
+                channels = cat_config[2]
                 category = discord.utils.get(guild.categories, name=cat_name)
                 if category is None:
                     # Buat kategori baru jika hilang
@@ -9115,11 +9156,18 @@ class CategoryMaintainer(commands.Cog):
                     print(f"[AutoFix] Kategori '{cat_name}' dibuat ulang.")
 
                 # Pastikan channel di dalam kategori ada dan aktif
-                for ch_name in channels:
+                for ch_info in channels:
+                    ch_name = ch_info[0]
                     channel = discord.utils.get(category.channels, name=ch_name)
                     if channel is None:
-                        await guild.create_text_channel(ch_name, category=category)
-                        print(f"[AutoFix] Channel '{ch_name}' dibuat di kategori '{cat_name}'.")
+                        ch_type = ch_info[3] if len(ch_info) > 3 else "text"
+                        if ch_type == "voice":
+                            await category.create_voice_channel(ch_name)
+                        elif ch_type == "stage":
+                            await category.create_stage_channel(ch_name)
+                        else:
+                            await category.create_text_channel(ch_name)
+                        print(f"[AutoFix] Channel '{ch_name}' ({ch_type}) dibuat di kategori '{cat_name}'.")
 
     @ensure_categories.before_loop
     async def before_ensure_categories(self):
