@@ -109,6 +109,8 @@ load_dotenv()
 API_KEYS = {
     "DISCORD_TOKEN": os.getenv("DISCORD_TOKEN"),
     "DANA_PAYMENT_LINK": os.getenv("DANA_PAYMENT_LINK"),
+    "DANA_NUMBER": os.getenv("DANA_NUMBER"),
+    "CRYPTO_WALLET": os.getenv("CRYPTO_WALLET"),
     "OPENROUTER_API_KEY": os.getenv("OPENROUTER_API_KEY"),
     "POLYGON_API_KEY": os.getenv("POLYGON_API_KEY"),
     "COIN_MARKET_CAP_API_KEY": os.getenv("COIN_MARKET_CAP_API_KEY"),
@@ -146,6 +148,8 @@ AI_MODEL = "mistralai/mixtral-8x7b-instruct"  # Model institutional-grade
 # Untuk kemudahan akses
 DISCORD_TOKEN = API_KEYS["DISCORD_TOKEN"]
 DANA_PAYMENT_LINK = API_KEYS["DANA_PAYMENT_LINK"]
+DANA_NUMBER = API_KEYS["DANA_NUMBER"]
+CRYPTO_WALLET = API_KEYS["CRYPTO_WALLET"]
 
 # ===================== INISIALISASI BOT =====================
 """
@@ -4037,6 +4041,84 @@ async def send_analysis_embed(
 
 
 # ===================== VIEW =====================
+# --- Pilihan Pembayaran ---
+class PaymentSelect(discord.ui.Select):
+    def __init__(self):
+        options = [
+            discord.SelectOption(
+                label="📱 Bayar via DANA",
+                value="dana",
+                description="Tampilkan nomor DANA dan link pembayaran"
+            ),
+            discord.SelectOption(
+                label="🪙 Bayar via Crypto",
+                value="crypto",
+                description="Tampilkan alamat wallet Crypto"
+            )
+        ]
+        super().__init__(
+            placeholder="💳 Pilih Metode Pembayaran...",
+            min_values=1,
+            max_values=1,
+            options=options,
+            custom_id="select_pembayaran"
+        )
+
+    async def callback(self, interaction: discord.Interaction):
+        # Update embed dengan informasi pembayaran
+        embed = interaction.message.embeds[0]
+        new_embed = embed.copy()
+
+        # Dapatkan nilai terbaru dari environment / API_KEYS
+        dana_num = DANA_NUMBER or "081234567890"
+        crypto_wal = CRYPTO_WALLET or "0x1234567890abcdef1234567890abcdef12345678"
+        dana_link = DANA_PAYMENT_LINK or ""
+
+        # Bersihkan field pembayaran sebelumnya jika ada
+        for i, field in enumerate(new_embed.fields):
+            if field.name in ["📱 DETAIL PEMBAYARAN DANA", "🪙 DETAIL PEMBAYARAN CRYPTO"]:
+                new_embed.remove_field(i)
+                break
+
+        # Buat view baru yang melestarikan Select dropdown ini
+        view = discord.ui.View(timeout=None)
+        view.add_item(PaymentSelect())
+
+        if self.values[0] == "dana":
+            new_embed.add_field(
+                name="📱 DETAIL PEMBAYARAN DANA",
+                value=(
+                    f"▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n"
+                    f"➩ **Nomor DANA:** `{dana_num}`\n"
+                    f"➩ **Atas Nama:** MountAlgo Admin\n\n"
+                    f"💡 *Silakan transfer sesuai nominal paket, lalu kirim bukti transfer ke Admin.*\n"
+                    f"▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰"
+                ),
+                inline=False
+            )
+            # Jika ada link DANA, tambahkan tombol Link DANA
+            if dana_link:
+                view.add_item(discord.ui.Button(
+                    label="⬈ Buka DANA",
+                    url=dana_link,
+                    style=discord.ButtonStyle.link
+                ))
+        elif self.values[0] == "crypto":
+            new_embed.add_field(
+                name="🪙 DETAIL PEMBAYARAN CRYPTO",
+                value=(
+                    f"▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n"
+                    f"➩ **Alamat Wallet (USDT/BTC/ETH):**\n`{crypto_wal}`\n\n"
+                    f"⚠️ **PENTING:** Pastikan Anda mengirimkan koin ke alamat wallet di atas dengan benar. "
+                    f"Kesalahan pengiriman jaringan di luar tanggung jawab kami.\n"
+                    f"▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰"
+                ),
+                inline=False
+            )
+
+        await interaction.response.edit_message(embed=new_embed, view=view)
+
+
 # --- Verifikasi ---
 class VerifView(discord.ui.View):
     def __init__(self):
@@ -4328,15 +4410,9 @@ class VerifView(discord.ui.View):
             text="Komunitas Trading MountAlgo ● Fitur Premium Diperbarui oktobrr 2025 (tekan Dismiss Message Untuk menghapus Pesan"
         )
         
-        # Tombol Aksi
-        payment_button = Button(
-            style=discord.ButtonStyle.success,
-            label="⬈ Bayar Sekarang",
-            url=DANA_PAYMENT_LINK
-        )
-
-        view = View(timeout=None)
-        view.add_item(payment_button)
+        # Dropdown Opsi Pembayaran
+        view = discord.ui.View(timeout=None)
+        view.add_item(PaymentSelect())
 
         await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
 
