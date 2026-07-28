@@ -2184,8 +2184,8 @@ CHANNEL_PERMISSIONS = {
             "read_message_history": True,
             "send_messages": False,
             "add_reactions": True,
-            "embed_links": False,
-            "attach_files": False,
+            "embed_links": True,
+            "attach_files": True,
             "mention_everyone": False,
             "create_public_threads": False,
             "create_private_threads": False,
@@ -2198,12 +2198,12 @@ CHANNEL_PERMISSIONS = {
             "read_message_history": True,
             "send_messages": False,
             "add_reactions": True,
-            "embed_links": False,
-            "attach_files": False,
+            "embed_links": True,
+            "attach_files": True,
             "mention_everyone": False,
             "create_public_threads": False,
             "create_private_threads": False,
-            "send_messages_in_threads": False,
+            "send_messages_in_threads": True,
             "use_external_emojis": False,
             "manage_messages": False,
         },
@@ -2212,12 +2212,12 @@ CHANNEL_PERMISSIONS = {
             "read_message_history": True,
             "send_messages": False,
             "add_reactions": True,
-            "embed_links": False,
-            "attach_files": False,
+            "embed_links": True,
+            "attach_files": True,
             "mention_everyone": False,
             "create_public_threads": False,
             "create_private_threads": False,
-            "send_messages_in_threads": False,
+            "send_messages_in_threads": True,
             "use_external_emojis": False,
             "manage_messages": False,
         },
@@ -2226,8 +2226,8 @@ CHANNEL_PERMISSIONS = {
             "read_message_history": True,
             "send_messages": False,
             "add_reactions": True,
-            "embed_links": False,
-            "attach_files": False,
+            "embed_links": True,
+            "attach_files": True,
             "mention_everyone": False,
             "create_public_threads": False,
             "create_private_threads": False,
@@ -4061,7 +4061,7 @@ class PaymentSelect(discord.ui.Select):
             discord.SelectOption(
                 label="📱 Bayar via DANA",
                 value="dana",
-                description="Tampilkan nomor DANA dan link pembayaran"
+                description="Tampilkan opsi pembayaran DANA"
             ),
             discord.SelectOption(
                 label="🪙 Bayar via Crypto",
@@ -5752,7 +5752,6 @@ class ConfirmHapusThreadView(View):
     async def batal(self, interaction: discord.Interaction, button: discord.ui.Button):
         await interaction.response.send_message("Dibatalkan ❎", ephemeral=True)
         await interaction.message.delete()
-
 
 class ConfirmSetupUlangView(View):
     def __init__(self):
@@ -8351,7 +8350,7 @@ async def on_message(message):
         return
     
     # Channel yang diawasi: obrolan utama dan thread turunannya
-    valid_parents = ["obrolan","share-your-profits"]
+    valid_parents = ["obrolan", "share-your-profits", "member-voice", "member-stage", "wizard-voice", "wizard-stage"]
     
     # Identifikasi channel utama
     parent_channel = message.channel
