@@ -4560,6 +4560,13 @@ class ThreadManagementView(discord.ui.View):
             return False
             
         return True  # Biarkan semua user berinteraksi
+
+    def is_owner_or_admin(self, interaction: discord.Interaction) -> bool:
+        """Mengecek apakah user adalah pembuat thread atau Admin"""
+        is_creator = interaction.channel.owner_id == interaction.user.id
+        admin_role = discord.utils.get(interaction.guild.roles, name="Admin")
+        is_admin = (admin_role in interaction.user.roles) or interaction.user.guild_permissions.administrator
+        return is_creator or is_admin
     
     @discord.ui.button(
         label="Hapus Thread",
@@ -4567,11 +4574,9 @@ class ThreadManagementView(discord.ui.View):
         custom_id="delete_thread"
     )
     async def delete_thread(self, interaction: discord.Interaction, button: discord.ui.Button):
-        # Cek apakah user memiliki role Admin
-        admin_role = discord.utils.get(interaction.guild.roles, name="Admin")
-        if admin_role not in interaction.user.roles:
+        if not self.is_owner_or_admin(interaction):
             await interaction.response.send_message(
-                "❌ Hanya Admin yang bisa menghapus thread!",
+                "❌ Hanya pembuat thread atau Admin yang bisa menghapus thread!",
                 ephemeral=True
             )
             return
@@ -4589,6 +4594,13 @@ class ThreadManagementView(discord.ui.View):
         custom_id="tag_members"
     )
     async def tag_members(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if not self.is_owner_or_admin(interaction):
+            await interaction.response.send_message(
+                "❌ Hanya pembuat thread atau Admin yang bisa menggunakan fitur tag anggota!",
+                ephemeral=True
+            )
+            return
+
         await interaction.response.send_modal(ThreadTaggingModal())
 
 class ObrolanView(View):
