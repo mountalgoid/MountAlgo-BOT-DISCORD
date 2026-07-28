@@ -110,7 +110,9 @@ API_KEYS = {
     "DISCORD_TOKEN": os.getenv("DISCORD_TOKEN"),
     "DANA_PAYMENT_LINK": os.getenv("DANA_PAYMENT_LINK"),
     "DANA_NUMBER": os.getenv("DANA_NUMBER"),
-    "CRYPTO_WALLET": os.getenv("CRYPTO_WALLET"),
+    "USDT_WALLET": os.getenv("USDT_WALLET"),
+    "BTC_WALLET": os.getenv("BTC_WALLET"),
+    "ETH_WALLET": os.getenv("ETH_WALLET"),
     "OPENROUTER_API_KEY": os.getenv("OPENROUTER_API_KEY"),
     "POLYGON_API_KEY": os.getenv("POLYGON_API_KEY"),
     "COIN_MARKET_CAP_API_KEY": os.getenv("COIN_MARKET_CAP_API_KEY"),
@@ -149,7 +151,9 @@ AI_MODEL = "mistralai/mixtral-8x7b-instruct"  # Model institutional-grade
 DISCORD_TOKEN = API_KEYS["DISCORD_TOKEN"]
 DANA_PAYMENT_LINK = API_KEYS["DANA_PAYMENT_LINK"]
 DANA_NUMBER = API_KEYS["DANA_NUMBER"]
-CRYPTO_WALLET = API_KEYS["CRYPTO_WALLET"]
+USDT_WALLET = API_KEYS["USDT_WALLET"]
+BTC_WALLET = API_KEYS["BTC_WALLET"]
+ETH_WALLET = API_KEYS["ETH_WALLET"]
 
 # ===================== INISIALISASI BOT =====================
 """
@@ -4076,7 +4080,9 @@ class PaymentSelect(discord.ui.Select):
 
         # Dapatkan nilai terbaru dari environment / API_KEYS
         dana_num = DANA_NUMBER or "081234567890"
-        crypto_wal = CRYPTO_WALLET or "0x1234567890abcdef1234567890abcdef12345678"
+        usdt_wal = USDT_WALLET or "TYourUSDTWalletAddressTRC20Here"
+        btc_wal = BTC_WALLET or "1YourBTCWalletAddressBitcoinNetworkHere"
+        eth_wal = ETH_WALLET or "0xYourETHWalletAddressERC20Here"
         dana_link = DANA_PAYMENT_LINK or ""
 
         # Bersihkan field pembayaran sebelumnya jika ada
@@ -4113,8 +4119,10 @@ class PaymentSelect(discord.ui.Select):
                 name="🪙 DETAIL PEMBAYARAN CRYPTO",
                 value=(
                     f"▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n"
-                    f"➩ **Alamat Wallet (USDT/BTC/ETH):**\n`{crypto_wal}`\n\n"
-                    f"⚠️ **PENTING:** Pastikan Anda mengirimkan koin ke alamat wallet di atas dengan benar. "
+                    f"💵 **USDT (Network: TRC20):**\n`{usdt_wal}`\n\n"
+                    f"🪙 **BTC (Network: Bitcoin):**\n`{btc_wal}`\n\n"
+                    f"💎 **ETH (Network: ERC20):**\n`{eth_wal}`\n\n"
+                    f"⚠️ **PENTING:** Pastikan Anda mengirimkan koin ke alamat wallet dan jaringan (network) yang sesuai di atas. "
                     f"Kesalahan pengiriman jaringan di luar tanggung jawab kami.\n"
                     f"▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰"
                 ),
