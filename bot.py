@@ -1879,7 +1879,7 @@ class Database:
             async with aiosqlite.connect(cls.DB_PATH) as db:
                 db.row_factory = aiosqlite.Row
                 async with db.execute(
-                    "SELECT * FROM users WHERE user_id = ?", 
+                    "SELECT user_id, username, status, subscription_type, expiry_date FROM users WHERE user_id = ?",
                     (user_id,)
                 ) as cursor:
                     row = await cursor.fetchone()
