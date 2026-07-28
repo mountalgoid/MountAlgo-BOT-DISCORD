@@ -108,8 +108,8 @@ load_dotenv()
 # API Keys
 API_KEYS = {
     "DISCORD_TOKEN": os.getenv("DISCORD_TOKEN"),
-    "DANA_PAYMENT_LINK": os.getenv("DANA_PAYMENT_LINK"),
-    "DANA_NUMBER": os.getenv("DANA_NUMBER"),
+    "DANA_BULANAN_LINK": os.getenv("DANA_BULANAN_LINK"),
+    "DANA_TAHUNAN_LINK": os.getenv("DANA_TAHUNAN_LINK"),
     "USDT_WALLET": os.getenv("USDT_WALLET"),
     "BTC_WALLET": os.getenv("BTC_WALLET"),
     "ETH_WALLET": os.getenv("ETH_WALLET"),
@@ -149,8 +149,8 @@ AI_MODEL = "mistralai/mixtral-8x7b-instruct"  # Model institutional-grade
 
 # Untuk kemudahan akses
 DISCORD_TOKEN = API_KEYS["DISCORD_TOKEN"]
-DANA_PAYMENT_LINK = API_KEYS["DANA_PAYMENT_LINK"]
-DANA_NUMBER = API_KEYS["DANA_NUMBER"]
+DANA_BULANAN_LINK = API_KEYS["DANA_BULANAN_LINK"]
+DANA_TAHUNAN_LINK = API_KEYS["DANA_TAHUNAN_LINK"]
 USDT_WALLET = API_KEYS["USDT_WALLET"]
 BTC_WALLET = API_KEYS["BTC_WALLET"]
 ETH_WALLET = API_KEYS["ETH_WALLET"]
@@ -4079,11 +4079,11 @@ class PaymentSelect(discord.ui.Select):
         new_embed = embed.copy()
 
         # Dapatkan nilai terbaru dari environment / API_KEYS
-        dana_num = DANA_NUMBER or "081234567890"
+        dana_bulanan = DANA_BULANAN_LINK or "https://link.dana.id/qr/your_monthly_qr_id"
+        dana_tahunan = DANA_TAHUNAN_LINK or "https://link.dana.id/qr/your_yearly_qr_id"
         usdt_wal = USDT_WALLET or "TYourUSDTWalletAddressTRC20Here"
         btc_wal = BTC_WALLET or "1YourBTCWalletAddressBitcoinNetworkHere"
         eth_wal = ETH_WALLET or "0xYourETHWalletAddressERC20Here"
-        dana_link = DANA_PAYMENT_LINK or ""
 
         # Bersihkan field pembayaran sebelumnya jika ada
         for i, field in enumerate(new_embed.fields):
@@ -4100,20 +4100,24 @@ class PaymentSelect(discord.ui.Select):
                 name="📱 DETAIL PEMBAYARAN DANA",
                 value=(
                     f"▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n"
-                    f"➩ **Nomor DANA:** `{dana_num}`\n"
-                    f"➩ **Atas Nama:** MountAlgo Admin\n\n"
-                    f"💡 *Silakan transfer sesuai nominal paket, lalu kirim bukti transfer ke Admin.*\n"
+                    f"➩ **Paket Wizard Bulanan:**\nSilakan bayar menggunakan tombol **Bayar Wizard Bulanan** di bawah.\n\n"
+                    f"➩ **Paket Wizard Tahunan:**\nSilakan bayar menggunakan tombol **Bayar Wizard Tahunan** di bawah.\n\n"
+                    f"💡 *Setelah melakukan pembayaran, silakan kirim bukti transfer ke Admin untuk konfirmasi.*\n"
                     f"▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰"
                 ),
                 inline=False
             )
-            # Jika ada link DANA, tambahkan tombol Link DANA
-            if dana_link:
-                view.add_item(discord.ui.Button(
-                    label="⬈ Buka DANA",
-                    url=dana_link,
-                    style=discord.ButtonStyle.link
-                ))
+            # Tambahkan tombol Link DANA untuk Bulanan dan Tahunan
+            view.add_item(discord.ui.Button(
+                label="⬈ Bayar Wizard Bulanan",
+                url=dana_bulanan,
+                style=discord.ButtonStyle.link
+            ))
+            view.add_item(discord.ui.Button(
+                label="⬈ Bayar Wizard Tahunan",
+                url=dana_tahunan,
+                style=discord.ButtonStyle.link
+            ))
         elif self.values[0] == "crypto":
             new_embed.add_field(
                 name="🪙 DETAIL PEMBAYARAN CRYPTO",
@@ -4519,7 +4523,7 @@ class BantuanView(View):
             description=(
                 "☛ Langkah-langkah untuk Mengaktifkan Keanggotaan Wizard\n"
                 "▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n"
-                f"1. Transfer biaya langganan melalui [DANA / CRYPTO Payment]({DANA_PAYMENT_LINK}).\n"
+                "1. Transfer biaya langganan melalui pilihan DANA / CRYPTO di menu verifikasi.\n"
                 "2. Kirim bukti pembayaran beserta Id discord anda ke admin dengan menekan tombol hubungi admin di kanal #bantuan.\n"
                 "3. Tunggu konfirmasi dan peningkatan peran ke WizardMember.\n"
                 "▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n"
