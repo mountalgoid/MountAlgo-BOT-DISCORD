@@ -5377,6 +5377,13 @@ class KontrolPenggunaView(discord.ui.View):
                     super().__init__(timeout=120)
                     self.page = 0
 
+                async def interaction_check(self, inter: discord.Interaction) -> bool:
+                    is_admin = any(r.name == "Admin" for r in inter.user.roles) or inter.user.guild_permissions.administrator
+                    if not is_admin:
+                        await inter.response.send_message("✘ Akses Ditolak!", ephemeral=True)
+                        return False
+                    return True
+
                 @discord.ui.button(label="⬅️", style=discord.ButtonStyle.secondary)
                 async def prev_page(self, inter: discord.Interaction, btn: discord.ui.Button):
                     self.page = (self.page - 1) % len(pages)
@@ -5611,6 +5618,13 @@ class ExportDataSelectView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=90)
 
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        is_admin = any(r.name == "Admin" for r in interaction.user.roles) or interaction.user.guild_permissions.administrator
+        if not is_admin:
+            await interaction.response.send_message("✘ Akses Ditolak!", ephemeral=True)
+            return False
+        return True
+
     # ------------------------------------------------------
     # 📂 PILIHAN TABEL UNTUK DIEKSPOR
     # ------------------------------------------------------
@@ -5745,6 +5759,13 @@ class ConfirmHapusThreadView(View):
     def __init__(self):
         super().__init__(timeout=30)
 
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        is_admin = any(r.name == "Admin" for r in interaction.user.roles) or interaction.user.guild_permissions.administrator
+        if not is_admin:
+            await interaction.response.send_message("✘ Akses Ditolak!", ephemeral=True)
+            return False
+        return True
+
     @discord.ui.button(label="✅ Ya, Hapus Thread Usang", style=discord.ButtonStyle.danger)
     async def konfirmasi_hapus(self, interaction: discord.Interaction, button: discord.ui.Button):
         await hapus_thread_usang(interaction, hari=7)
@@ -5757,6 +5778,13 @@ class ConfirmHapusThreadView(View):
 class ConfirmSetupUlangView(View):
     def __init__(self):
         super().__init__(timeout=60)
+
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        is_admin = any(r.name == "Admin" for r in interaction.user.roles) or interaction.user.guild_permissions.administrator
+        if not is_admin:
+            await interaction.response.send_message("✘ Akses Ditolak!", ephemeral=True)
+            return False
+        return True
 
     @discord.ui.button(label="✅ Ya, Setting Up Ulang Server", style=discord.ButtonStyle.danger)
     async def konfirmasi_setup(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -5882,6 +5910,13 @@ class DeleteDatabaseView(discord.ui.View):
         super().__init__(timeout=120)
         self.selected_table = None
 
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        is_admin = any(r.name == "Admin" for r in interaction.user.roles) or interaction.user.guild_permissions.administrator
+        if not is_admin:
+            await interaction.response.send_message("✘ Akses Ditolak!", ephemeral=True)
+            return False
+        return True
+
     @discord.ui.select(
         placeholder="✘ Pilih Data untuk Dihapus",
         min_values=1,
@@ -5945,6 +5980,14 @@ class ThreadTaggingModal(Modal, title="🔔 Tag Anggota dalam Thread"):
             await interaction.response.send_message("❌ Hanya bisa di thread!", ephemeral=True)
             return
             
+        is_creator = thread.owner_id == interaction.user.id
+        admin_role = discord.utils.get(interaction.guild.roles, name="Admin")
+        is_admin = (admin_role in interaction.user.roles) if admin_role else False
+        is_admin = is_admin or interaction.user.guild_permissions.administrator
+        if not (is_creator or is_admin):
+            await interaction.response.send_message("❌ Hanya pembuat thread atau Admin yang bisa menggunakan fitur tag anggota!", ephemeral=True)
+            return
+
         await interaction.response.defer(ephemeral=True)
         
         # Daftar role yang diizinkan
