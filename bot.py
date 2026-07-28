@@ -5478,10 +5478,6 @@ class KontrolAdminView(discord.ui.View):
     )
     async def hapus_thread_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         """Tombol untuk menghapus thread perkenalan & obrolan yang sudah usang"""
-        if not any(role.name.lower() == "admin" for role in interaction.user.roles):
-            await interaction.response.send_message("🚫 Hanya Admin yang dapat melakukan ini.", ephemeral=True)
-            return
-
         view = ConfirmHapusThreadView()
         await interaction.response.send_message(
             "⚠️ Apakah kamu yakin ingin menghapus thread **obrolan & perkenalan** yang sudah tidak aktif?",
@@ -5582,9 +5578,6 @@ class KontrolAdminView(discord.ui.View):
         row=4
     )
     async def kirim_wizard_embed(self, interaction: discord.Interaction, button: discord.ui.Button):
-        if not interaction.user.guild_permissions.administrator:
-            await interaction.response.send_message("❌ Hanya admin yang dapat menggunakan tombol ini.", ephemeral=True)
-            return
         await interaction.response.send_modal(WizardEmbedModal())
 
     # ------------------------------------------------------
@@ -5597,10 +5590,6 @@ class KontrolAdminView(discord.ui.View):
         row=4
     )
     async def setup_ulang_server(self, interaction: discord.Interaction, button: discord.ui.Button):
-        if not interaction.user.guild_permissions.administrator:
-            await interaction.response.send_message("❌ Hanya admin yang dapat menggunakan tombol ini.", ephemeral=True)
-            return
-
         view = ConfirmSetupUlangView()
         await interaction.response.send_message(
             "⚠️ **PERINGATAN KRITIS:** Apakah Anda yakin ingin melakukan Setting Up Ulang?\n"
