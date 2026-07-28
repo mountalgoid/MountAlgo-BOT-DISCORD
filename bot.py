@@ -108,7 +108,11 @@ load_dotenv()
 # API Keys
 API_KEYS = {
     "DISCORD_TOKEN": os.getenv("DISCORD_TOKEN"),
-    "DANA_PAYMENT_LINK": os.getenv("DANA_PAYMENT_LINK"),
+    "DANA_BULANAN_LINK": os.getenv("DANA_BULANAN_LINK"),
+    "DANA_TAHUNAN_LINK": os.getenv("DANA_TAHUNAN_LINK"),
+    "USDT_WALLET": os.getenv("USDT_WALLET"),
+    "BTC_WALLET": os.getenv("BTC_WALLET"),
+    "ETH_WALLET": os.getenv("ETH_WALLET"),
     "OPENROUTER_API_KEY": os.getenv("OPENROUTER_API_KEY"),
     "POLYGON_API_KEY": os.getenv("POLYGON_API_KEY"),
     "COIN_MARKET_CAP_API_KEY": os.getenv("COIN_MARKET_CAP_API_KEY"),
@@ -145,7 +149,11 @@ AI_MODEL = "mistralai/mixtral-8x7b-instruct"  # Model institutional-grade
 
 # Untuk kemudahan akses
 DISCORD_TOKEN = API_KEYS["DISCORD_TOKEN"]
-DANA_PAYMENT_LINK = API_KEYS["DANA_PAYMENT_LINK"]
+DANA_BULANAN_LINK = API_KEYS["DANA_BULANAN_LINK"]
+DANA_TAHUNAN_LINK = API_KEYS["DANA_TAHUNAN_LINK"]
+USDT_WALLET = API_KEYS["USDT_WALLET"]
+BTC_WALLET = API_KEYS["BTC_WALLET"]
+ETH_WALLET = API_KEYS["ETH_WALLET"]
 
 # ===================== INISIALISASI BOT =====================
 """
@@ -1165,6 +1173,11 @@ class VerificationSystem:
             return False
 
 
+async def synchronize_admin_added_users(guild: discord.Guild) -> int:
+    """Proses upgrade otomatis untuk user yang diadd admin"""
+    return 0
+
+
 # Fungsi Sinkronisasi Harian yang Memperhitungkan Verifikasi
 async def sync_verification_system(guild: discord.Guild):
     """Sinkronisasi sistem verifikasi setiap hari"""
@@ -1866,7 +1879,7 @@ class Database:
             async with aiosqlite.connect(cls.DB_PATH) as db:
                 db.row_factory = aiosqlite.Row
                 async with db.execute(
-                    "SELECT * FROM users WHERE user_id = ?", 
+                    "SELECT user_id, username, status, subscription_type, expiry_date FROM users WHERE user_id = ?",
                     (user_id,)
                 ) as cursor:
                     row = await cursor.fetchone()
@@ -4037,6 +4050,92 @@ async def send_analysis_embed(
 
 
 # ===================== VIEW =====================
+# --- Pilihan Pembayaran ---
+class PaymentSelect(discord.ui.Select):
+    def __init__(self):
+        options = [
+            discord.SelectOption(
+                label="📱 Bayar via DANA",
+                value="dana",
+                description="Tampilkan nomor DANA dan link pembayaran"
+            ),
+            discord.SelectOption(
+                label="🪙 Bayar via Crypto",
+                value="crypto",
+                description="Tampilkan alamat wallet Crypto"
+            )
+        ]
+        super().__init__(
+            placeholder="💳 Pilih Metode Pembayaran...",
+            min_values=1,
+            max_values=1,
+            options=options,
+            custom_id="select_pembayaran"
+        )
+
+    async def callback(self, interaction: discord.Interaction):
+        # Update embed dengan informasi pembayaran
+        embed = interaction.message.embeds[0]
+        new_embed = embed.copy()
+
+        # Dapatkan nilai terbaru dari environment / API_KEYS
+        dana_bulanan = DANA_BULANAN_LINK or "https://link.dana.id/qr/your_monthly_qr_id"
+        dana_tahunan = DANA_TAHUNAN_LINK or "https://link.dana.id/qr/your_yearly_qr_id"
+        usdt_wal = USDT_WALLET or "TYourUSDTWalletAddressTRC20Here"
+        btc_wal = BTC_WALLET or "1YourBTCWalletAddressBitcoinNetworkHere"
+        eth_wal = ETH_WALLET or "0xYourETHWalletAddressERC20Here"
+
+        # Bersihkan field pembayaran sebelumnya jika ada
+        for i, field in enumerate(new_embed.fields):
+            if field.name in ["📱 DETAIL PEMBAYARAN DANA", "🪙 DETAIL PEMBAYARAN CRYPTO"]:
+                new_embed.remove_field(i)
+                break
+
+        # Buat view baru yang melestarikan Select dropdown ini
+        view = discord.ui.View(timeout=None)
+        view.add_item(PaymentSelect())
+
+        if self.values[0] == "dana":
+            new_embed.add_field(
+                name="📱 DETAIL PEMBAYARAN DANA",
+                value=(
+                    f"▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n"
+                    f"➩ **Paket Wizard Bulanan:**\nSilakan bayar menggunakan tombol **Bayar Wizard Bulanan** di bawah.\n\n"
+                    f"➩ **Paket Wizard Tahunan:**\nSilakan bayar menggunakan tombol **Bayar Wizard Tahunan** di bawah.\n\n"
+                    f"💡 *Setelah melakukan pembayaran, silakan kirim bukti transfer ke Admin untuk konfirmasi.*\n"
+                    f"▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰"
+                ),
+                inline=False
+            )
+            # Tambahkan tombol Link DANA untuk Bulanan dan Tahunan
+            view.add_item(discord.ui.Button(
+                label="⬈ Bayar Wizard Bulanan",
+                url=dana_bulanan,
+                style=discord.ButtonStyle.link
+            ))
+            view.add_item(discord.ui.Button(
+                label="⬈ Bayar Wizard Tahunan",
+                url=dana_tahunan,
+                style=discord.ButtonStyle.link
+            ))
+        elif self.values[0] == "crypto":
+            new_embed.add_field(
+                name="🪙 DETAIL PEMBAYARAN CRYPTO",
+                value=(
+                    f"▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n"
+                    f"💵 **USDT (Network: TRC20):**\n`{usdt_wal}`\n\n"
+                    f"🪙 **BTC (Network: Bitcoin):**\n`{btc_wal}`\n\n"
+                    f"💎 **ETH (Network: ERC20):**\n`{eth_wal}`\n\n"
+                    f"⚠️ **PENTING:** Pastikan Anda mengirimkan koin ke alamat wallet dan jaringan (network) yang sesuai di atas. "
+                    f"Kesalahan pengiriman jaringan di luar tanggung jawab kami.\n"
+                    f"▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰"
+                ),
+                inline=False
+            )
+
+        await interaction.response.edit_message(embed=new_embed, view=view)
+
+
 # --- Verifikasi ---
 class VerifView(discord.ui.View):
     def __init__(self):
@@ -4050,6 +4149,7 @@ class VerifView(discord.ui.View):
     async def cek_status(self, interaction: discord.Interaction, button: discord.ui.Button):
         user = interaction.user
         roles = [r.name for r in user.roles]
+        channel = interaction.channel
 
         # Jika sudah Admin
         if "Admin" in roles:
@@ -4328,15 +4428,9 @@ class VerifView(discord.ui.View):
             text="Komunitas Trading MountAlgo ● Fitur Premium Diperbarui oktobrr 2025 (tekan Dismiss Message Untuk menghapus Pesan"
         )
         
-        # Tombol Aksi
-        payment_button = Button(
-            style=discord.ButtonStyle.success,
-            label="⬈ Bayar Sekarang",
-            url=DANA_PAYMENT_LINK
-        )
-
-        view = View(timeout=None)
-        view.add_item(payment_button)
+        # Dropdown Opsi Pembayaran
+        view = discord.ui.View(timeout=None)
+        view.add_item(PaymentSelect())
 
         await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
 
@@ -4429,7 +4523,7 @@ class BantuanView(View):
             description=(
                 "☛ Langkah-langkah untuk Mengaktifkan Keanggotaan Wizard\n"
                 "▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n"
-                f"1. Transfer biaya langganan melalui [DANA / CRYPTO Payment]({DANA_PAYMENT_LINK}).\n"
+                "1. Transfer biaya langganan melalui pilihan DANA / CRYPTO di menu verifikasi.\n"
                 "2. Kirim bukti pembayaran beserta Id discord anda ke admin dengan menekan tombol hubungi admin di kanal #bantuan.\n"
                 "3. Tunggu konfirmasi dan peningkatan peran ke WizardMember.\n"
                 "▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n"
@@ -5491,141 +5585,14 @@ class KontrolAdminView(discord.ui.View):
             await interaction.response.send_message("❌ Hanya admin yang dapat menggunakan tombol ini.", ephemeral=True)
             return
 
-        await interaction.response.defer(ephemeral=True, thinking=True)
-        
-        admin = interaction.user
-        guild = interaction.guild
-        start_time = datetime.now(jakarta_tz)
-        errors = []
-        
-        async def safe_update(content: str, critical=False):
-            sent = False
-            try:
-                msg = f"🚨 {content}" if critical else f"ℹ️ {content}"
-                await interaction.followup.send(msg, ephemeral=True)
-                sent = True
-            except Exception:
-                pass
-            
-            try:
-                msg = f"🚨 {content}" if critical else f"ℹ️ {content}"
-                await admin.send(msg)
-                sent = True
-            except Exception:
-                pass
-                
-            try:
-                laporan_ch = discord.utils.get(guild.text_channels, name="laporan")
-                if laporan_ch:
-                    msg = f"🚨 {content}" if critical else f"ℹ️ {content}"
-                    await laporan_ch.send(msg)
-                    sent = True
-            except Exception:
-                pass
-                
-            return sent
-
-        await safe_update("🏗️ **Memulai setup server...** (`Proses bisa memakan waktu ±3 menit`)")
-        
-        current_step = ""
-        try:
-            # Step 1: Inisialisasi server
-            current_step = "Setup struktur server"
-            await safe_update("🛠️ Memulai inisialisasi struktur server...")
-            try:
-                server_result = await asyncio.wait_for(
-                    ServerBuilder.setup_server(guild),
-                    timeout=300
-                )
-                await safe_update(f"✅ Struktur server selesai!")
-            except asyncio.TimeoutError:
-                await safe_update("⚠️ Waktu setup server habis! Lanjut ke penerapan izin...", True)
-            
-            # Step 2: Terapkan izin channel
-            current_step = "Penerapan izin channel"
-            await safe_update("🔐 Menerapkan izin channel...")
-            success_count, error_count, permission_errors = await apply_channel_permissions(guild)
-            if permission_errors:
-                errors.extend(permission_errors)
-                
-            # Step 3: Sinkronisasi database
-            current_step = "Sinkronisasi user & role"
-            await safe_update("🔄 Memulai sinkronisasi user dan role...")
-            sync_report = await synchronize_users_and_roles(guild)
-            
-            # Step 4: Kirim konten ke roadmap_trader
-            current_step = "Pengiriman roadmap trader"
-            await safe_update("📝 Mengirim konten ke channel roadmap_trader...")
-            roadmap_channel = discord.utils.get(guild.text_channels, name="roadmap_trader")
-            if not roadmap_channel:
-                await safe_update("⚠️ Channel #roadmap_trader tidak ditemukan, membuat secara manual...", True)
-                nexus_category = discord.utils.get(guild.categories, name="🔥|NEXUS HUB|") or await guild.create_category("🔥|NEXUS HUB|")
-                roadmap_channel = await guild.create_text_channel(
-                    name="roadmap_trader",
-                    category=nexus_category,
-                    topic="Perjalanan seorang trader yang berkelanjutan",
-                    position=3,
-                    overwrites={guild.default_role: discord.PermissionOverwrite(read_messages=True)}
-                )
-            
-            try:
-                await send_roadmap_trader(roadmap_channel)
-                await safe_update("✅ Konten roadmap trader berhasil dikirim!")
-            except Exception as e:
-                error_msg = f"Gagal mengirim konten roadmap trader: {str(e)}"
-                errors.append(error_msg)
-                await safe_update(error_msg, True)
-                
-            # Step 5: Setup thread analisis
-            try:
-                current_step = "Setup thread analisis"
-                channel = discord.utils.get(guild.text_channels, name="wizard-analisis")
-                if channel:
-                    created_threads = await create_analysis_threads(channel)
-                    if created_threads:
-                        await safe_update(f"✅ Thread Wizard Analisis dibuat: {', '.join(created_threads)}")
-                        await sync_members_to_threads(guild)
-            except Exception as e:
-                error_msg = f"Gagal setup thread: {str(e)}"
-                errors.append(error_msg)
-                await safe_update(error_msg, True)
-                
-            duration = (datetime.now(jakarta_tz) - start_time).total_seconds()
-            await safe_update(f"🟢 Semua proses setup selesai! Durasi: {duration:.1f} detik")
-            
-        except Exception as step_error:
-            error_msg = f"🔥 **GAGAL** pada langkah `{current_step}`: {str(step_error)}"
-            errors.append(error_msg)
-            await safe_update(error_msg, True)
-            
-        # 5. Buat laporan akhir
-        try:
-            duration = (datetime.now(jakarta_tz) - start_time).total_seconds()
-            result_message = [
-                f"## 🤖 Laporan Setup Server",
-                f"**Server**: {guild.name}",
-                f"**Admin**: {admin.mention}",
-                f"**Durasi**: {duration:.2f} detik",
-                f"**Selesai**: <t:{int(time.time())}:R>",
-                ""
-            ]
-            if 'sync_report' in locals():
-                result_message.append("### 🔄 Sinkronisasi User/Role")
-                result_message.append(f"```\n{sync_report}\n```")
-            result_message.append(f"### 🔓 Izin Channel")
-            result_message.append(f"Channel berhasil: **{success_count}**")
-            result_message.append(f"Error izin: **{error_count}**")
-            if errors:
-                result_message.append("### 🚨 Error yang Terjadi")
-                for i, error in enumerate(errors[:5]):
-                    result_message.append(f"{i+1}. {error}")
-            
-            full_report = "\n".join(result_message)
-            if len(full_report) > 2000:
-                full_report = full_report[:1900] + "\n... [laporan dipotong]"
-            await safe_update(full_report)
-        except Exception as report_error:
-            logging.error(f"Gagal mengirim laporan akhir: {report_error}")
+        view = ConfirmSetupUlangView()
+        await interaction.response.send_message(
+            "⚠️ **PERINGATAN KRITIS:** Apakah Anda yakin ingin melakukan Setting Up Ulang?\n"
+            "Tindakan ini akan menghapus dan membuat ulang seluruh kategori, channel, dan izin di server ini! "
+            "Proses ini **tidak dapat dibatalkan** setelah dimulai.",
+            view=view,
+            ephemeral=True
+        )
 
 # ==========================================================
 # 💾 EXPORT DATA VIEW (DENGAN FITUR ZIP SEMUA DATA)
@@ -5781,6 +5748,129 @@ class ConfirmHapusThreadView(View):
     async def batal(self, interaction: discord.Interaction, button: discord.ui.Button):
         await interaction.response.send_message("Dibatalkan ❎", ephemeral=True)
         await interaction.message.delete()
+
+
+class ConfirmSetupUlangView(View):
+    def __init__(self):
+        super().__init__(timeout=60)
+
+    @discord.ui.button(label="✅ Ya, Setting Up Ulang Server", style=discord.ButtonStyle.danger)
+    async def konfirmasi_setup(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.defer(ephemeral=True, thinking=True)
+
+        admin = interaction.user
+        guild = interaction.guild
+        start_time = datetime.now(jakarta_tz)
+        errors = []
+
+        async def safe_update(content: str, critical=False):
+            sent = False
+            try:
+                msg = f"🚨 {content}" if critical else f"ℹ️ {content}"
+                await interaction.followup.send(msg, ephemeral=True)
+                sent = True
+            except Exception:
+                pass
+
+            try:
+                msg = f"🚨 {content}" if critical else f"ℹ️ {content}"
+                await admin.send(msg)
+                sent = True
+            except Exception:
+                pass
+
+            try:
+                laporan_ch = discord.utils.get(guild.text_channels, name="laporan")
+                if laporan_ch:
+                    msg = f"🚨 {content}" if critical else f"ℹ️ {content}"
+                    await laporan_ch.send(msg)
+                    sent = True
+            except Exception:
+                pass
+
+            return sent
+
+        await safe_update("🏗️ **Memulai setup server...** (`Proses bisa memakan waktu ±3 menit`)")
+
+        current_step = ""
+        try:
+            # Step 1: Inisialisasi server
+            current_step = "Setup struktur server"
+            await safe_update("🛠️ Memulai inisialisasi struktur server...")
+            try:
+                server_result = await asyncio.wait_for(
+                    ServerBuilder.setup_server(guild),
+                    timeout=300
+                )
+                await safe_update(f"✅ Struktur server selesai!")
+            except asyncio.TimeoutError:
+                await safe_update("⚠️ Waktu setup server habis! Lanjut ke penerapan izin...", True)
+
+            # Step 2: Terapkan izin channel
+            current_step = "Penerapan izin channel"
+            await safe_update("🔐 Menerapkan izin channel...")
+            success_count, error_count, permission_errors = await apply_channel_permissions(guild)
+            if permission_errors:
+                errors.extend(permission_errors)
+
+            # Step 3: Sinkronisasi database
+            current_step = "Sinkronisasi user & role"
+            await safe_update("🔄 Memulai sinkronisasi user dan role...")
+            sync_report = await synchronize_users_and_roles(guild)
+
+            # Step 4: Kirim konten ke roadmap_trader
+            current_step = "Pengiriman roadmap trader"
+            await safe_update("📝 Mengirim konten ke channel roadmap_trader...")
+            roadmap_channel = discord.utils.get(guild.text_channels, name="roadmap_trader")
+            if not roadmap_channel:
+                await safe_update("⚠️ Channel #roadmap_trader tidak ditemukan, membuat secara manual...", True)
+                nexus_category = discord.utils.get(guild.categories, name="🔥|NEXUS HUB|") or await guild.create_category("🔥|NEXUS HUB|")
+                roadmap_channel = await guild.create_text_channel(
+                    name="roadmap_trader",
+                    category=nexus_category,
+                    topic="Perjalanan seorang trader yang berkelanjutan",
+                    position=3,
+                    overwrites={
+                        guild.default_role: discord.PermissionOverwrite(read_messages=True)
+                    }
+                )
+
+            try:
+                await send_roadmap_trader(roadmap_channel)
+                await safe_update("✅ Konten roadmap trader berhasil dikirim!")
+            except Exception as e:
+                errors.append(f"Gagal kirim roadmap: {str(e)}")
+                await safe_update(f"⚠️ Gagal kirim roadmap: {str(e)}", True)
+
+            # Step 5: Setup thread analisis (opsional)
+            try:
+                current_step = "Setup thread analisis"
+                channel = discord.utils.get(guild.text_channels, name="wizard-analisis")
+                if channel:
+                    created_threads = await create_analysis_threads(channel)
+                    if created_threads:
+                        await safe_update(f"✅ Thread Wizard Analisis dibuat: {', '.join(created_threads)}")
+                        await sync_members_to_threads(guild)
+            except Exception as e:
+                errors.append(f"Gagal setup thread: {str(e)}")
+                await safe_update(f"⚠️ Gagal setup thread: {str(e)}", True)
+
+            duration = (datetime.now(jakarta_tz) - start_time).total_seconds()
+            await safe_update(f"🟢 Semua proses setup selesai! Durasi: {duration:.1f} detik")
+
+        except Exception as step_error:
+            error_msg = f"🔥 **GAGAL** pada langkah `{current_step}`: {str(step_error)}"
+            errors.append(error_msg)
+            await safe_update(error_msg, True)
+
+    @discord.ui.button(label="❌ Batal", style=discord.ButtonStyle.secondary)
+    async def batal(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.send_message("❌ Aksi setup ulang dibatalkan. Struktur server tetap aman.", ephemeral=True)
+        try:
+            await interaction.message.delete()
+        except Exception:
+            pass
+
 
 class DeleteDatabaseView(discord.ui.View):
     """View untuk menghapus tabel database dengan konfirmasi"""
@@ -8318,7 +8408,7 @@ async def on_message(message):
                     delete_after=15
                 )
                 # Jadwalkan unmute
-                bot.loop.create_task(unmute_user(member=message.author, role=mute_role))
+                bot.loop.create_task(unmute_later(member=message.author, mute_role=mute_role, duration_minutes=MUTE_DURATION))
             except Exception as e:
                 logging.error(f"Gagal mute user {message.author.id}: {str(e)}")
                 
@@ -8382,7 +8472,6 @@ async def setupserver(ctx):
         # 2. Fungsi untuk mengirim update status secara aman
         async def safe_update(content: str, critical=False):
             """Kirim update status ke berbagai saluran sebagai fallback"""
-            nonlocal original_channel
             targets = []
             
             # Prioritas: channel asal -> DM admin -> channel laporan
