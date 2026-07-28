@@ -1169,6 +1169,11 @@ class VerificationSystem:
             return False
 
 
+async def synchronize_admin_added_users(guild: discord.Guild) -> int:
+    """Proses upgrade otomatis untuk user yang diadd admin"""
+    return 0
+
+
 # Fungsi Sinkronisasi Harian yang Memperhitungkan Verifikasi
 async def sync_verification_system(guild: discord.Guild):
     """Sinkronisasi sistem verifikasi setiap hari"""
@@ -4132,6 +4137,7 @@ class VerifView(discord.ui.View):
     async def cek_status(self, interaction: discord.Interaction, button: discord.ui.Button):
         user = interaction.user
         roles = [r.name for r in user.roles]
+        channel = interaction.channel
 
         # Jika sudah Admin
         if "Admin" in roles:
@@ -8394,7 +8400,7 @@ async def on_message(message):
                     delete_after=15
                 )
                 # Jadwalkan unmute
-                bot.loop.create_task(unmute_user(member=message.author, role=mute_role))
+                bot.loop.create_task(unmute_later(member=message.author, mute_role=mute_role, duration_minutes=MUTE_DURATION))
             except Exception as e:
                 logging.error(f"Gagal mute user {message.author.id}: {str(e)}")
                 
@@ -8458,7 +8464,6 @@ async def setupserver(ctx):
         # 2. Fungsi untuk mengirim update status secara aman
         async def safe_update(content: str, critical=False):
             """Kirim update status ke berbagai saluran sebagai fallback"""
-            nonlocal original_channel
             targets = []
             
             # Prioritas: channel asal -> DM admin -> channel laporan
