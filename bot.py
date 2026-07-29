@@ -1232,6 +1232,7 @@ async def apply_user_roles(member: discord.Member, status: str):
         Wizard_bulanan_role = discord.utils.get(member.guild.roles, name="WizardMemberBulanan")
         Wizard_tahunan_role = discord.utils.get(member.guild.roles, name="WizardMemberTahunan")
         admin_role = discord.utils.get(member.guild.roles, name="Admin")
+        unverified_role = discord.utils.get(member.guild.roles, name="Unverified")
         
         # Buat role jika belum ada
         if not member_role:
@@ -1258,17 +1259,25 @@ async def apply_user_roles(member: discord.Member, status: str):
                 reason="Role otomatis",
                 color=discord.Color.red()
             )
+        if not unverified_role:
+            unverified_role = await member.guild.create_role(
+                name="Unverified",
+                reason="Role otomatis",
+                color=discord.Color.dark_grey()
+            )
         
         # Hapus semua role level sebelumnya
         roles_to_remove = []
         if status == "WizardMemberBulanan":
-            roles_to_remove = [r for r in [member_role, Wizard_tahunan_role, admin_role] if r and r in member.roles]
+            roles_to_remove = [r for r in [member_role, Wizard_tahunan_role, admin_role, unverified_role] if r and r in member.roles]
         elif status == "WizardMemberTahunan":
-            roles_to_remove = [r for r in [member_role, Wizard_bulanan_role, admin_role] if r and r in member.roles]
+            roles_to_remove = [r for r in [member_role, Wizard_bulanan_role, admin_role, unverified_role] if r and r in member.roles]
         elif status == "Admin":
-            roles_to_remove = [r for r in [member_role, Wizard_bulanan_role, Wizard_tahunan_role] if r and r in member.roles]
+            roles_to_remove = [r for r in [member_role, Wizard_bulanan_role, Wizard_tahunan_role, unverified_role] if r and r in member.roles]
+        elif status == "PendingVerification":
+            roles_to_remove = [r for r in [member_role, Wizard_bulanan_role, Wizard_tahunan_role, admin_role] if r and r in member.roles]
         else:  # member
-            roles_to_remove = [r for r in [Wizard_bulanan_role, Wizard_tahunan_role, admin_role] if r and r in member.roles]
+            roles_to_remove = [r for r in [Wizard_bulanan_role, Wizard_tahunan_role, admin_role, unverified_role] if r and r in member.roles]
             
         if roles_to_remove:
             await member.remove_roles(*roles_to_remove)
@@ -1280,6 +1289,8 @@ async def apply_user_roles(member: discord.Member, status: str):
             await member.add_roles(Wizard_tahunan_role)
         elif status == "Admin" and admin_role:
             await member.add_roles(admin_role)
+        elif status == "PendingVerification" and unverified_role:
+            await member.add_roles(unverified_role)
         elif member_role:  # Default ke member
             await member.add_roles(member_role)
             
@@ -1543,49 +1554,95 @@ async def synchronize_users_and_roles(guild: discord.Guild):
             try:
                 expiry_dt = datetime.fromisoformat(expiry)
                 if expiry_dt < datetime.utcnow():
-                    await apply_user_roles(member, "member")
+                    db_status = "member"
+                    sub_type = None
+                    expiry = None
                     await Database.update_user_status(user_id_num, "member", None, None)
                     stats["expired"] += 1
-                    report.append(f"⏳ {member.display_name}: langganan berakhir → member")
-                    continue
+                    report.append(f"⏳ {member.display_name}: langganan berakhir → Member")
             except Exception:
                 pass
 
-        # Periksa role Discord vs database
+        # Cari status berdasarkan role Discord saat ini
         current_roles = [r.name for r in member.roles]
-        if db_status == "WizardMemberBulanan" and "WizardMemberBulanan" not in current_roles:
-            await apply_user_roles(member, "WizardMemberBulanan")
+        role_status = "PendingVerification"
+        if "Admin" in current_roles:
+            role_status = "Admin"
+        elif "WizardMemberTahunan" in current_roles:
+            role_status = "WizardMemberTahunan"
+        elif "WizardMemberBulanan" in current_roles:
+            role_status = "WizardMemberBulanan"
+        elif "Member" in current_roles:
+            role_status = "member"
+
+        # Tentukan status akhir berdasarkan prioritas
+        resolved_status = "PendingVerification"
+        if db_status == "Admin" or role_status == "Admin":
+            resolved_status = "Admin"
+        elif db_status == "WizardMemberTahunan" or role_status == "WizardMemberTahunan":
+            resolved_status = "WizardMemberTahunan"
+        elif db_status == "WizardMemberBulanan" or role_status == "WizardMemberBulanan":
+            resolved_status = "WizardMemberBulanan"
+        elif db_status == "member" or role_status == "member":
+            resolved_status = "member"
+
+        # Jika resolved status berubah dari DB status
+        if resolved_status != db_status:
+            new_sub_type = None
+            new_expiry = None
+            if resolved_status == "WizardMemberBulanan":
+                new_sub_type = "bulanan"
+                new_expiry = expiry if (db_status == "WizardMemberBulanan" and expiry) else (datetime.utcnow() + timedelta(days=30)).isoformat()
+            elif resolved_status == "WizardMemberTahunan":
+                new_sub_type = "tahunan"
+                new_expiry = expiry if (db_status == "WizardMemberTahunan" and expiry) else (datetime.utcnow() + timedelta(days=365)).isoformat()
+
+            await Database.update_user_status(user_id_num, resolved_status, new_sub_type, new_expiry)
+            stats["updated"] += 1
+            report.append(f"🔄 DB Update {member.display_name}: {db_status} -> {resolved_status}")
+            db_status = resolved_status
+            sub_type = new_sub_type
+            expiry = new_expiry
+
+        # Pastikan role di Discord sinkron dengan resolved status
+        target_role_name = None
+        if resolved_status == "Admin":
+            target_role_name = "Admin"
+        elif resolved_status == "WizardMemberTahunan":
+            target_role_name = "WizardMemberTahunan"
+        elif resolved_status == "WizardMemberBulanan":
+            target_role_name = "WizardMemberBulanan"
+        elif resolved_status == "member":
+            target_role_name = "Member"
+        elif resolved_status == "PendingVerification":
+            target_role_name = "Unverified"
+
+        if target_role_name and target_role_name not in current_roles:
+            await apply_user_roles(member, resolved_status)
             stats["fixed_roles"] += 1
-        elif db_status == "WizardMemberTahunan" and "WizardMemberTahunan" not in current_roles:
-            await apply_user_roles(member, "WizardMemberTahunan")
-            stats["fixed_roles"] += 1
-        elif db_status == "member" and "member" not in current_roles:
-            await apply_user_roles(member, "member")
-            stats["fixed_roles"] += 1
-        elif db_status == "Admin" and "Admin" not in current_roles:
-            await apply_user_roles(member, "Admin")
-            stats["fixed_roles"] += 1
+            report.append(f"🎭 Role Update {member.display_name} -> {target_role_name}")
         else:
             stats["updated"] += 1
 
-    # Tambahkan user baru
+    # Tambahkan user baru ke database
     existing_ids = set(db_users.keys())
     for mid, member in members.items():
         if mid not in existing_ids:
-            status = "member"
+            roles = [r.name for r in member.roles]
+            status = "PendingVerification"
             sub_type = None
             expiry = None
 
-            # Deteksi otomatis dari role
-            roles = [r.name for r in member.roles]
-            if "WizardMemberBulanan" in roles:
-                status, sub_type = "WizardMemberBulanan", "bulanan"
-                expiry = (datetime.utcnow() + timedelta(days=30)).isoformat()
+            if "Admin" in roles:
+                status = "Admin"
             elif "WizardMemberTahunan" in roles:
                 status, sub_type = "WizardMemberTahunan", "tahunan"
                 expiry = (datetime.utcnow() + timedelta(days=365)).isoformat()
-            elif "Admin" in roles:
-                status = "Admin"
+            elif "WizardMemberBulanan" in roles:
+                status, sub_type = "WizardMemberBulanan", "bulanan"
+                expiry = (datetime.utcnow() + timedelta(days=30)).isoformat()
+            elif "Member" in roles:
+                status = "member"
 
             await Database.add_user(member.id, member.name, status, sub_type, expiry)
             stats["added"] += 1
