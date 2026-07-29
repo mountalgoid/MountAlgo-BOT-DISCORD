@@ -862,7 +862,7 @@ async def check_Wizard_member_expiry():
                     Wizard_role = discord.utils.get(
                         guild.roles, name="WizardMemberBulanan" if status == "WizardMemberBulanan" else "WizardMemberTahunan"
                     )
-                    member_role = discord.utils.get(guild.roles, name="member")
+                    member_role = discord.utils.get(guild.roles, name="Member")
 
                     if Wizard_role and Wizard_role in member.roles:
                         await member.remove_roles(Wizard_role, reason="Langganan kedaluwarsa")
@@ -943,7 +943,7 @@ async def check_Wizard_member_expiry():
 #--user-----
 # Mapping status ke role
 STATUS_ROLE_MAP = {
-    "member": "member",
+    "member": "Member",
     "WizardMemberBulanan": "WizardMemberBulanan",
     "WizardMemberTahunan": "WizardMemberTahunan",
     "Admin": "Admin",
@@ -956,7 +956,7 @@ STATUS_ROLES = list(STATUS_ROLE_MAP.values())
 async def ensure_core_roles(guild: discord.Guild):
     """Pastikan semua role inti sudah dibuat"""
     role_configs = {
-        "member": discord.Color.blue(),
+        "Member": discord.Color.blue(),
         "WizardMemberBulanan": discord.Color.gold(),
         "WizardMemberTahunan": discord.Color.purple(),  # Warna berbeda untuk tahunan
         "Admin": discord.Color.red(),
@@ -989,7 +989,7 @@ class VerificationSystem:
         """
         # Step 1: Verifikasi user di Discord
         unverified_role = discord.utils.get(member.guild.roles, name="Unverified")
-        member_role = discord.utils.get(member.guild.roles, name="member")
+        member_role = discord.utils.get(member.guild.roles, name="Member")
         
         # Hapus role Unverified & tambahkan role member
         if unverified_role and unverified_role in member.roles:
@@ -1098,7 +1098,7 @@ class VerificationSystem:
         try:
             # Role yang perlu diatur
             unverified_role = discord.utils.get(member.guild.roles, name="Unverified")
-            member_role = discord.utils.get(member.guild.roles, name="member")
+            member_role = discord.utils.get(member.guild.roles, name="Member")
             
             # Hapus role unverified dan beri role member
             if unverified_role and unverified_role in member.roles:
@@ -1228,7 +1228,7 @@ async def apply_user_roles(member: discord.Member, status: str):
             return
             
         # Dapatkan role dengan nama yang konsisten
-        member_role = discord.utils.get(member.guild.roles, name="member")
+        member_role = discord.utils.get(member.guild.roles, name="Member")
         Wizard_bulanan_role = discord.utils.get(member.guild.roles, name="WizardMemberBulanan")
         Wizard_tahunan_role = discord.utils.get(member.guild.roles, name="WizardMemberTahunan")
         admin_role = discord.utils.get(member.guild.roles, name="Admin")
@@ -1236,7 +1236,7 @@ async def apply_user_roles(member: discord.Member, status: str):
         # Buat role jika belum ada
         if not member_role:
             member_role = await member.guild.create_role(
-                name="member",
+                name="Member",
                 reason="Role otomatis",
                 color=discord.Color.blue()
             )
@@ -1341,12 +1341,12 @@ async def synchronize_Wizard_expirations(guild: discord.Guild) -> int:
 def get_role_by_status(status: str) -> str:
     """Map status database ke nama role Discord"""
     status_mapping = {
-        "member": "member",
+        "member": "Member",
         "WizardMemberBulanan": "WizardMemberBulanan",
         "WizardMemberTahunan": "WizardMemberTahunan",
         "Admin": "Admin"
     }
-    return status_mapping.get(status, "member")
+    return status_mapping.get(status, "Member")
 
 def get_role(guild, role_name):
     """Dapatkan role dengan penanganan error"""
@@ -1613,17 +1613,17 @@ SERVER_STRUCTURE = [
         ("disclaimer", "Informasi hukum dan tanggung jawab penggunaan konten.", ["@everyone"]),
         ("verifikasi", "Proses verifikasi pengguna (2 tombol: Setuju & Langganan).", ["@everyone"]),
     ]),
-    ("🔥|MEMBER|", ["@member", "@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"], [
-        ("bantuan", "Panduan cepat untuk pengguna baru (FAQ & verifikasi langganan).", ["@member","@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"]),
-        ("pengumuman", "Update resmi tentang server atau layanan.", ["@member", "@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"]),
-        ("obrolan", "Ruang diskusi umum antar anggota.", ["@member", "@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"]),
-        ("roadmap_trader", "perjalanan seorang trader yang berkelanjutan.", ["@member", "@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"]),
-        ("core-ptl", "Pedoman Inti Dari Trader pengalaman dan Berwawasan Luas untuk Semua Member.", ["@member","@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"]),
-        ("akademi", "Materi edukasi trading.", ["@member", "@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"]),
-        ("free-indikator", "Indikator gratis yang dikembangkan MountAlgo.", ["@member", "@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"]),
-        ("share-your-profits", "Bagikan profit kamu dengan Semua member.", ["@member","@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"]),
-        ("member-voice", "Ruang obrolan suara antar anggota.", ["@member", "@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"], "voice"),
-        ("member-stage", "Panggung utama diskusi panel & event komunitas.", ["@member", "@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"], "stage"),
+    ("🔥|MEMBER|", ["@Member", "@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"], [
+        ("bantuan", "Panduan cepat untuk pengguna baru (FAQ & verifikasi langganan).", ["@Member","@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"]),
+        ("pengumuman", "Update resmi tentang server atau layanan.", ["@Member", "@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"]),
+        ("obrolan", "Ruang diskusi umum antar anggota.", ["@Member", "@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"]),
+        ("roadmap_trader", "perjalanan seorang trader yang berkelanjutan.", ["@Member", "@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"]),
+        ("core-ptl", "Pedoman Inti Dari Trader pengalaman dan Berwawasan Luas untuk Semua Member.", ["@Member","@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"]),
+        ("akademi", "Materi edukasi trading.", ["@Member", "@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"]),
+        ("free-indikator", "Indikator gratis yang dikembangkan MountAlgo.", ["@Member", "@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"]),
+        ("share-your-profits", "Bagikan profit kamu dengan Semua member.", ["@Member","@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"]),
+        ("member-voice", "Ruang obrolan suara antar anggota.", ["@Member", "@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"], "voice"),
+        ("member-stage", "Panggung utama diskusi panel & event komunitas.", ["@Member", "@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"], "stage"),
     ]),
     ("🧬|WIZARD|🚀🚀", ["@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"], [
         ("wizard-toolkits", "Tools bantu strategi trading personal.", ["@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"]),
@@ -2063,7 +2063,7 @@ CHANNEL_PERMISSIONS = {
         }
     },
     "bantuan": {
-        "@member": {
+        "@Member": {
             "view_channel": True,
             "read_message_history": True,
             "send_messages": False,
@@ -2121,7 +2121,7 @@ CHANNEL_PERMISSIONS = {
         }
     },
     "pengumuman": {
-        "@member": {
+        "@Member": {
             "view_channel": True,
             "read_message_history": True,
             "send_messages": False,
@@ -2179,7 +2179,7 @@ CHANNEL_PERMISSIONS = {
         }
     },
     "obrolan": {
-        "@member": {
+        "@Member": {
             "view_channel": True,
             "read_message_history": True,
             "send_messages": False,
@@ -2237,7 +2237,7 @@ CHANNEL_PERMISSIONS = {
         }
     },
     "roadmap_trader": {
-        "@member": {
+        "@Member": {
             "view_channel": True,
             "read_message_history": True,
             "send_messages": False,
@@ -2295,7 +2295,7 @@ CHANNEL_PERMISSIONS = {
         }
     },
     "core-ptl": {
-        "@member": {
+        "@Member": {
             "view_channel": True,
             "read_message_history": True,
             "send_messages": False,
@@ -2353,7 +2353,7 @@ CHANNEL_PERMISSIONS = {
         }
     },
     "akademi": {
-        "@member": {
+        "@Member": {
             "view_channel": True,
             "read_message_history": True,
             "send_messages": False,
@@ -2411,7 +2411,7 @@ CHANNEL_PERMISSIONS = {
         }
     },
     "free-indikator": {
-        "@member": {
+        "@Member": {
             "view_channel": True,
             "read_message_history": True,
             "send_messages": False,
@@ -2469,7 +2469,7 @@ CHANNEL_PERMISSIONS = {
         }
     },
     "share-your-profits": {
-        "@member": {
+        "@Member": {
             "view_channel": True,
             "read_message_history": True,
             "send_messages": False,
@@ -4219,7 +4219,7 @@ class VerifView(discord.ui.View):
             await interaction.response.send_message(embed=embed, ephemeral=True)
             return
         # Jika sudah member
-        if "member" in roles:
+        if "Member" in roles:
             embed = discord.Embed(
                 title="✅ STATUS MEMBER TERVERIFIKASI",
                 description="Kamu sudah **terverifikasi** sebagai member MountAlgo.\nTidak perlu verifikasi lagi, akses channel publik sudah terbuka.",
@@ -4241,7 +4241,7 @@ class VerifView(discord.ui.View):
         # Jika belum punya role utama (auto verifikasi)
         guild = interaction.guild
         unverified_role = discord.utils.get(guild.roles, name="Unverified")
-        member_role = discord.utils.get(guild.roles, name="member")
+        member_role = discord.utils.get(guild.roles, name="Member")
 
         # Hapus Unverified, tambahkan member
         if unverified_role and unverified_role in user.roles:
@@ -6015,7 +6015,7 @@ class ThreadTaggingModal(Modal, title="🔔 Tag Anggota dalam Thread"):
         await interaction.response.defer(ephemeral=True)
         
         # Daftar role yang diizinkan
-        ALLOWED_ROLES = {"member", "WizardMemberBulanan","WizardMemberTahunan", "Admin"}
+        ALLOWED_ROLES = {"Member", "WizardMemberBulanan","WizardMemberTahunan", "Admin"}
         
         target_names = [t.strip() for t in self.targets.value.split(",")]
         tagged_mentions = []
@@ -6144,7 +6144,7 @@ class PerkenalanModal(Modal, title="🏆 PERKENALAN DIRI MountAlgo 🚀"):
 
             # ================ AUTO-JOIN ================
             await thread.add_user(interaction.user)
-            target_roles = ["member", "WizardMemberBulanan","WizardMemberTahunan", "Admin"]
+            target_roles = ["Member", "WizardMemberBulanan","WizardMemberTahunan", "Admin"]
             for role_name in target_roles:
                 role = discord.utils.get(interaction.guild.roles, name=role_name)
                 if role:
@@ -6445,7 +6445,7 @@ class AddUserModal(discord.ui.Modal, title="⬈ Tambah Pengguna"):
             if existing_user:
                 existing_status = existing_user[2]
                 # Jika user sudah punya status aktif, tolak pendaftaran baru
-                if existing_status in ["member", "Admin", "WizardMemberBulanan", "WizardMemberTahunan"]:
+                if existing_status in ["Member", "Admin", "WizardMemberBulanan", "WizardMemberTahunan"]:
                     await interaction.response.send_message(
                         f"⚠️ **Pengguna sudah terdaftar!**\n"
                         f"👤 **Nama:** {existing_user[1]}\n"
@@ -6675,7 +6675,7 @@ class UpgradeUserModal(discord.ui.Modal, title="⤴️ Upgrade Pengguna ke Wizar
             # Hapus role sebelumnya (member, Wizard lain, admin)
             roles_to_remove = [
                 r for r in member.roles
-                if r.name in ["member", "WizardMemberBulanan", "WizardMemberTahunan", "Admin"]
+                if r.name in ["Member", "WizardMemberBulanan", "WizardMemberTahunan", "Admin"]
             ]
             if roles_to_remove:
                 await member.remove_roles(*roles_to_remove, reason="Upgrade ke role baru WizardMember")
@@ -7705,12 +7705,12 @@ class ServerBuilder:
         await ServerBuilder.safe_cleanup(guild, stats)
         
         # ----------------------- Langkah 1: Buat Role Utama -----------------------
-        core_roles = ["member", "WizardMemberBulanan","WizardMemberTahunan", "Admin", "Muted", "Unverified"]
+        core_roles = ["Member", "WizardMemberBulanan","WizardMemberTahunan", "Admin", "Muted", "Unverified"]
         for role_name in core_roles:
             try:
                 if not discord.utils.get(guild.roles, name=role_name):
                     color = {
-                        "member": discord.Color.blue(),
+                        "Member": discord.Color.blue(),
                         "WizardMemberBulanan": discord.Color.gold(),
                         "WizardMemberTahunan": discord.Color.purple(),
                         "Admin": discord.Color.red(),
@@ -8185,7 +8185,7 @@ async def on_member_join(member: discord.Member):
 
         # 2️⃣ Definisikan role yang dibutuhkan
         unverified_role = discord.utils.get(member.guild.roles, name="Unverified")
-        member_role = discord.utils.get(member.guild.roles, name="member")
+        member_role = discord.utils.get(member.guild.roles, name="Member")
         Wizard_bulanan_role = discord.utils.get(member.guild.roles, name="WizardMemberBulanan")
         Wizard_tahunan_role = discord.utils.get(member.guild.roles, name="WizardMemberTahunan")
         admin_role = discord.utils.get(member.guild.roles, name="Admin")
@@ -8320,7 +8320,7 @@ async def on_member_update(before: discord.Member, after: discord.Member):
         # Ambil role penting
         role_bulanan = "WizardMemberBulanan"
         role_tahunan = "WizardMemberTahunan"
-        role_member = "member"
+        role_member = "Member"
 
         # Deteksi upgrade
         if role_bulanan in added_roles or role_tahunan in added_roles:
@@ -8370,7 +8370,7 @@ async def on_member_update(before: discord.Member, after: discord.Member):
             has_any_Wizard = any(r in after_roles for r in [role_bulanan, role_tahunan])
             if not has_any_Wizard:
                 # Downgrade ke member
-                member_role = discord.utils.get(guild.roles, name="member")
+                member_role = discord.utils.get(guild.roles, name="Member")
                 if member_role:
                     await after.add_roles(member_role, reason="Langganan WizardMember berakhir")
 
