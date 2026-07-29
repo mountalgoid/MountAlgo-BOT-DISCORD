@@ -6531,22 +6531,10 @@ class AddUserModal(discord.ui.Modal, title="⬈ Tambah Pengguna"):
                 expiry_date=expiry
             )
 
-            # 🎭 Terapkan role ke member di server (jika ada)
+            # 🎭 Terapkan role ke member di server (jika ada) secara paksa
             member = interaction.guild.get_member(user_id)
             if member:
-                role_name = (
-                    "WizardMemberBulanan" if status_val == "WizardMemberBulanan"
-                    else "WizardMemberTahunan" if status_val == "WizardMemberTahunan"
-                    else status_val
-                )
-                role_obj = discord.utils.get(interaction.guild.roles, name=role_name)
-                if role_obj:
-                    await member.add_roles(role_obj)
-                else:
-                    await interaction.followup.send(
-                        f"⚠️ Role `{role_name}` belum ada di server. Buat role ini terlebih dahulu.",
-                        ephemeral=True
-                    )
+                await apply_user_roles(member, status_val)
 
             # ✅ Kirim notifikasi sukses ke admin
             message = (
@@ -6719,26 +6707,8 @@ class UpgradeUserModal(discord.ui.Modal, title="⤴️ Upgrade Pengguna ke Wizar
                 days = 365
                 status = "WizardMemberTahunan"
 
-            # Pastikan role tersedia
-            role_obj = discord.utils.get(interaction.guild.roles, name=role_name)
-            if not role_obj:
-                role_obj = await interaction.guild.create_role(
-                    name=role_name,
-                    color=discord.Color.gold() if sub_type == "Bulanan" else discord.Color.purple(),
-                    reason="Role otomatis dibuat oleh sistem UpgradeUserModal"
-                )
-                logging.info(f"Role '{role_name}' otomatis dibuat.")
-
-            # Hapus role sebelumnya (member, Wizard lain, admin)
-            roles_to_remove = [
-                r for r in member.roles
-                if r.name in ["Member", "WizardMemberBulanan", "WizardMemberTahunan", "Admin"]
-            ]
-            if roles_to_remove:
-                await member.remove_roles(*roles_to_remove, reason="Upgrade ke role baru WizardMember")
-
-            # Tambahkan role baru
-            await member.add_roles(role_obj, reason=f"Upgrade ke {role_name}")
+            # Terapkan role secara paksa sesuai dengan pilihan tombol
+            await apply_user_roles(member, status)
 
             # Hitung expiry date otomatis
             expiry = (datetime.utcnow() + timedelta(days=days)).isoformat()
@@ -7379,11 +7349,15 @@ class AdminAccessModal(Modal, title="Kontrol Hak Access Admin"):
                 await interaction.response.send_message("User/Role tidak ditemukan.", ephemeral=True)
                 return
             if self.action.value.lower() == "promote":
-                await member.add_roles(admin_role)
-                await interaction.response.send_message(f"User {member.mention} dipromosikan jadi admin.", ephemeral=True)
+                # Daftarkan ke database sebagai Admin
+                await Database.update_user_status(user_id, "Admin", None, None)
+                await apply_user_roles(member, "Admin")
+                await interaction.response.send_message(f"User {member.mention} dipromosikan jadi Admin.", ephemeral=True)
             elif self.action.value.lower() == "demote":
-                await member.remove_roles(admin_role)
-                await interaction.response.send_message(f"User {member.mention} dihapus dari admin.", ephemeral=True)
+                # Cabut semua dari database dan roles agar menjadi Member biasa
+                await Database.update_user_status(user_id, "member", None, None)
+                await apply_user_roles(member, "member")
+                await interaction.response.send_message(f"User {member.mention} didegradasi (demote) menjadi Member biasa di database dan roles.", ephemeral=True)
             else:
                 await interaction.response.send_message("Aksi tidak valid. Gunakan promote/demote.", ephemeral=True)
         except Exception as e:
