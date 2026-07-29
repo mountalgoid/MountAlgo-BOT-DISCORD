@@ -4548,6 +4548,28 @@ class BantuanView(View):
             alasan="Permintaan bantuan melalui tombol Hubungi Admin"
         )
         
+async def get_thread_creator_id(thread: discord.Thread) -> int | None:
+    """Mendapatkan ID pembuat thread asli dari embed pembuka"""
+    if not thread or not thread.guild:
+        return None
+    if thread.owner_id and thread.owner_id != thread.guild.me.id:
+        return thread.owner_id
+
+    try:
+        async for msg in thread.history(limit=5, oldest_first=True):
+            if msg.embeds:
+                for embed in msg.embeds:
+                    for field in embed.fields:
+                        if "Diprakarsai oleh" in field.name:
+                            match = re.search(r"<@!?(\d+)>", field.value)
+                            if match:
+                                return int(match.group(1))
+    except Exception as e:
+        logging.error(f"Error get_thread_creator_id: {e}")
+
+    return None
+
+
 class ThreadManagementView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
@@ -4561,9 +4583,10 @@ class ThreadManagementView(discord.ui.View):
             
         return True  # Biarkan semua user berinteraksi
 
-    def is_owner_or_admin(self, interaction: discord.Interaction) -> bool:
+    async def is_owner_or_admin(self, interaction: discord.Interaction) -> bool:
         """Mengecek apakah user adalah pembuat thread atau Admin"""
-        is_creator = interaction.channel.owner_id == interaction.user.id
+        creator_id = await get_thread_creator_id(interaction.channel)
+        is_creator = (creator_id == interaction.user.id)
         admin_role = discord.utils.get(interaction.guild.roles, name="Admin")
         is_admin = (admin_role in interaction.user.roles) or interaction.user.guild_permissions.administrator
         return is_creator or is_admin
@@ -4574,7 +4597,7 @@ class ThreadManagementView(discord.ui.View):
         custom_id="delete_thread"
     )
     async def delete_thread(self, interaction: discord.Interaction, button: discord.ui.Button):
-        if not self.is_owner_or_admin(interaction):
+        if not await self.is_owner_or_admin(interaction):
             await interaction.response.send_message(
                 "❌ Hanya pembuat thread atau Admin yang bisa menghapus thread!",
                 ephemeral=True
@@ -4594,7 +4617,7 @@ class ThreadManagementView(discord.ui.View):
         custom_id="tag_members"
     )
     async def tag_members(self, interaction: discord.Interaction, button: discord.ui.Button):
-        if not self.is_owner_or_admin(interaction):
+        if not await self.is_owner_or_admin(interaction):
             await interaction.response.send_message(
                 "❌ Hanya pembuat thread atau Admin yang bisa menggunakan fitur tag anggota!",
                 ephemeral=True
@@ -5980,7 +6003,8 @@ class ThreadTaggingModal(Modal, title="🔔 Tag Anggota dalam Thread"):
             await interaction.response.send_message("❌ Hanya bisa di thread!", ephemeral=True)
             return
             
-        is_creator = thread.owner_id == interaction.user.id
+        creator_id = await get_thread_creator_id(thread)
+        is_creator = (creator_id == interaction.user.id)
         admin_role = discord.utils.get(interaction.guild.roles, name="Admin")
         is_admin = (admin_role in interaction.user.roles) if admin_role else False
         is_admin = is_admin or interaction.user.guild_permissions.administrator
