@@ -862,7 +862,7 @@ async def check_Wizard_member_expiry():
                     Wizard_role = discord.utils.get(
                         guild.roles, name="WizardMemberBulanan" if status == "WizardMemberBulanan" else "WizardMemberTahunan"
                     )
-                    member_role = discord.utils.get(guild.roles, name="member")
+                    member_role = discord.utils.get(guild.roles, name="Member")
 
                     if Wizard_role and Wizard_role in member.roles:
                         await member.remove_roles(Wizard_role, reason="Langganan kedaluwarsa")
@@ -943,7 +943,7 @@ async def check_Wizard_member_expiry():
 #--user-----
 # Mapping status ke role
 STATUS_ROLE_MAP = {
-    "member": "member",
+    "member": "Member",
     "WizardMemberBulanan": "WizardMemberBulanan",
     "WizardMemberTahunan": "WizardMemberTahunan",
     "Admin": "Admin",
@@ -956,7 +956,7 @@ STATUS_ROLES = list(STATUS_ROLE_MAP.values())
 async def ensure_core_roles(guild: discord.Guild):
     """Pastikan semua role inti sudah dibuat"""
     role_configs = {
-        "member": discord.Color.blue(),
+        "Member": discord.Color.blue(),
         "WizardMemberBulanan": discord.Color.gold(),
         "WizardMemberTahunan": discord.Color.purple(),  # Warna berbeda untuk tahunan
         "Admin": discord.Color.red(),
@@ -989,7 +989,7 @@ class VerificationSystem:
         """
         # Step 1: Verifikasi user di Discord
         unverified_role = discord.utils.get(member.guild.roles, name="Unverified")
-        member_role = discord.utils.get(member.guild.roles, name="member")
+        member_role = discord.utils.get(member.guild.roles, name="Member")
         
         # Hapus role Unverified & tambahkan role member
         if unverified_role and unverified_role in member.roles:
@@ -1098,7 +1098,7 @@ class VerificationSystem:
         try:
             # Role yang perlu diatur
             unverified_role = discord.utils.get(member.guild.roles, name="Unverified")
-            member_role = discord.utils.get(member.guild.roles, name="member")
+            member_role = discord.utils.get(member.guild.roles, name="Member")
             
             # Hapus role unverified dan beri role member
             if unverified_role and unverified_role in member.roles:
@@ -1228,15 +1228,16 @@ async def apply_user_roles(member: discord.Member, status: str):
             return
             
         # Dapatkan role dengan nama yang konsisten
-        member_role = discord.utils.get(member.guild.roles, name="member")
+        member_role = discord.utils.get(member.guild.roles, name="Member")
         Wizard_bulanan_role = discord.utils.get(member.guild.roles, name="WizardMemberBulanan")
         Wizard_tahunan_role = discord.utils.get(member.guild.roles, name="WizardMemberTahunan")
         admin_role = discord.utils.get(member.guild.roles, name="Admin")
+        unverified_role = discord.utils.get(member.guild.roles, name="Unverified")
         
         # Buat role jika belum ada
         if not member_role:
             member_role = await member.guild.create_role(
-                name="member",
+                name="Member",
                 reason="Role otomatis",
                 color=discord.Color.blue()
             )
@@ -1258,17 +1259,25 @@ async def apply_user_roles(member: discord.Member, status: str):
                 reason="Role otomatis",
                 color=discord.Color.red()
             )
+        if not unverified_role:
+            unverified_role = await member.guild.create_role(
+                name="Unverified",
+                reason="Role otomatis",
+                color=discord.Color.dark_grey()
+            )
         
         # Hapus semua role level sebelumnya
         roles_to_remove = []
         if status == "WizardMemberBulanan":
-            roles_to_remove = [r for r in [member_role, Wizard_tahunan_role, admin_role] if r and r in member.roles]
+            roles_to_remove = [r for r in [member_role, Wizard_tahunan_role, admin_role, unverified_role] if r and r in member.roles]
         elif status == "WizardMemberTahunan":
-            roles_to_remove = [r for r in [member_role, Wizard_bulanan_role, admin_role] if r and r in member.roles]
+            roles_to_remove = [r for r in [member_role, Wizard_bulanan_role, admin_role, unverified_role] if r and r in member.roles]
         elif status == "Admin":
-            roles_to_remove = [r for r in [member_role, Wizard_bulanan_role, Wizard_tahunan_role] if r and r in member.roles]
+            roles_to_remove = [r for r in [member_role, Wizard_bulanan_role, Wizard_tahunan_role, unverified_role] if r and r in member.roles]
+        elif status == "PendingVerification":
+            roles_to_remove = [r for r in [member_role, Wizard_bulanan_role, Wizard_tahunan_role, admin_role] if r and r in member.roles]
         else:  # member
-            roles_to_remove = [r for r in [Wizard_bulanan_role, Wizard_tahunan_role, admin_role] if r and r in member.roles]
+            roles_to_remove = [r for r in [Wizard_bulanan_role, Wizard_tahunan_role, admin_role, unverified_role] if r and r in member.roles]
             
         if roles_to_remove:
             await member.remove_roles(*roles_to_remove)
@@ -1280,6 +1289,8 @@ async def apply_user_roles(member: discord.Member, status: str):
             await member.add_roles(Wizard_tahunan_role)
         elif status == "Admin" and admin_role:
             await member.add_roles(admin_role)
+        elif status == "PendingVerification" and unverified_role:
+            await member.add_roles(unverified_role)
         elif member_role:  # Default ke member
             await member.add_roles(member_role)
             
@@ -1341,12 +1352,12 @@ async def synchronize_Wizard_expirations(guild: discord.Guild) -> int:
 def get_role_by_status(status: str) -> str:
     """Map status database ke nama role Discord"""
     status_mapping = {
-        "member": "member",
+        "member": "Member",
         "WizardMemberBulanan": "WizardMemberBulanan",
         "WizardMemberTahunan": "WizardMemberTahunan",
         "Admin": "Admin"
     }
-    return status_mapping.get(status, "member")
+    return status_mapping.get(status, "Member")
 
 def get_role(guild, role_name):
     """Dapatkan role dengan penanganan error"""
@@ -1543,49 +1554,95 @@ async def synchronize_users_and_roles(guild: discord.Guild):
             try:
                 expiry_dt = datetime.fromisoformat(expiry)
                 if expiry_dt < datetime.utcnow():
-                    await apply_user_roles(member, "member")
+                    db_status = "member"
+                    sub_type = None
+                    expiry = None
                     await Database.update_user_status(user_id_num, "member", None, None)
                     stats["expired"] += 1
-                    report.append(f"⏳ {member.display_name}: langganan berakhir → member")
-                    continue
+                    report.append(f"⏳ {member.display_name}: langganan berakhir → Member")
             except Exception:
                 pass
 
-        # Periksa role Discord vs database
+        # Cari status berdasarkan role Discord saat ini
         current_roles = [r.name for r in member.roles]
-        if db_status == "WizardMemberBulanan" and "WizardMemberBulanan" not in current_roles:
-            await apply_user_roles(member, "WizardMemberBulanan")
+        role_status = "PendingVerification"
+        if "Admin" in current_roles:
+            role_status = "Admin"
+        elif "WizardMemberTahunan" in current_roles:
+            role_status = "WizardMemberTahunan"
+        elif "WizardMemberBulanan" in current_roles:
+            role_status = "WizardMemberBulanan"
+        elif "Member" in current_roles:
+            role_status = "member"
+
+        # Tentukan status akhir berdasarkan prioritas
+        resolved_status = "PendingVerification"
+        if db_status == "Admin" or role_status == "Admin":
+            resolved_status = "Admin"
+        elif db_status == "WizardMemberTahunan" or role_status == "WizardMemberTahunan":
+            resolved_status = "WizardMemberTahunan"
+        elif db_status == "WizardMemberBulanan" or role_status == "WizardMemberBulanan":
+            resolved_status = "WizardMemberBulanan"
+        elif db_status == "member" or role_status == "member":
+            resolved_status = "member"
+
+        # Jika resolved status berubah dari DB status
+        if resolved_status != db_status:
+            new_sub_type = None
+            new_expiry = None
+            if resolved_status == "WizardMemberBulanan":
+                new_sub_type = "bulanan"
+                new_expiry = expiry if (db_status == "WizardMemberBulanan" and expiry) else (datetime.utcnow() + timedelta(days=30)).isoformat()
+            elif resolved_status == "WizardMemberTahunan":
+                new_sub_type = "tahunan"
+                new_expiry = expiry if (db_status == "WizardMemberTahunan" and expiry) else (datetime.utcnow() + timedelta(days=365)).isoformat()
+
+            await Database.update_user_status(user_id_num, resolved_status, new_sub_type, new_expiry)
+            stats["updated"] += 1
+            report.append(f"🔄 DB Update {member.display_name}: {db_status} -> {resolved_status}")
+            db_status = resolved_status
+            sub_type = new_sub_type
+            expiry = new_expiry
+
+        # Pastikan role di Discord sinkron dengan resolved status
+        target_role_name = None
+        if resolved_status == "Admin":
+            target_role_name = "Admin"
+        elif resolved_status == "WizardMemberTahunan":
+            target_role_name = "WizardMemberTahunan"
+        elif resolved_status == "WizardMemberBulanan":
+            target_role_name = "WizardMemberBulanan"
+        elif resolved_status == "member":
+            target_role_name = "Member"
+        elif resolved_status == "PendingVerification":
+            target_role_name = "Unverified"
+
+        if target_role_name and target_role_name not in current_roles:
+            await apply_user_roles(member, resolved_status)
             stats["fixed_roles"] += 1
-        elif db_status == "WizardMemberTahunan" and "WizardMemberTahunan" not in current_roles:
-            await apply_user_roles(member, "WizardMemberTahunan")
-            stats["fixed_roles"] += 1
-        elif db_status == "member" and "member" not in current_roles:
-            await apply_user_roles(member, "member")
-            stats["fixed_roles"] += 1
-        elif db_status == "Admin" and "Admin" not in current_roles:
-            await apply_user_roles(member, "Admin")
-            stats["fixed_roles"] += 1
+            report.append(f"🎭 Role Update {member.display_name} -> {target_role_name}")
         else:
             stats["updated"] += 1
 
-    # Tambahkan user baru
+    # Tambahkan user baru ke database
     existing_ids = set(db_users.keys())
     for mid, member in members.items():
         if mid not in existing_ids:
-            status = "member"
+            roles = [r.name for r in member.roles]
+            status = "PendingVerification"
             sub_type = None
             expiry = None
 
-            # Deteksi otomatis dari role
-            roles = [r.name for r in member.roles]
-            if "WizardMemberBulanan" in roles:
-                status, sub_type = "WizardMemberBulanan", "bulanan"
-                expiry = (datetime.utcnow() + timedelta(days=30)).isoformat()
+            if "Admin" in roles:
+                status = "Admin"
             elif "WizardMemberTahunan" in roles:
                 status, sub_type = "WizardMemberTahunan", "tahunan"
                 expiry = (datetime.utcnow() + timedelta(days=365)).isoformat()
-            elif "Admin" in roles:
-                status = "Admin"
+            elif "WizardMemberBulanan" in roles:
+                status, sub_type = "WizardMemberBulanan", "bulanan"
+                expiry = (datetime.utcnow() + timedelta(days=30)).isoformat()
+            elif "Member" in roles:
+                status = "member"
 
             await Database.add_user(member.id, member.name, status, sub_type, expiry)
             stats["added"] += 1
@@ -1613,20 +1670,24 @@ SERVER_STRUCTURE = [
         ("disclaimer", "Informasi hukum dan tanggung jawab penggunaan konten.", ["@everyone"]),
         ("verifikasi", "Proses verifikasi pengguna (2 tombol: Setuju & Langganan).", ["@everyone"]),
     ]),
-    ("🔥|MEMBER|", ["@member", "@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"], [
-        ("bantuan", "Panduan cepat untuk pengguna baru (FAQ & verifikasi langganan).", ["@member","@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"]),
-        ("pengumuman", "Update resmi tentang server atau layanan.", ["@member", "@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"]),
-        ("obrolan", "Ruang diskusi umum antar anggota.", ["@member", "@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"]),
-        ("roadmap_trader", "perjalanan seorang trader yang berkelanjutan.", ["@member", "@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"]),
-        ("core-ptl", "Pedoman Inti Dari Trader pengalaman dan Berwawasan Luas untuk Semua Member.", ["@member","@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"]),
-        ("akademi", "Materi edukasi trading.", ["@member", "@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"]),
-        ("free-indikator", "Indikator gratis yang dikembangkan MountAlgo.", ["@member", "@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"]),
-        ("share-your-profits", "Bagikan profit kamu dengan Semua member.", ["@member","@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"]),
+    ("🔥|MEMBER|", ["@Member", "@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"], [
+        ("bantuan", "Panduan cepat untuk pengguna baru (FAQ & verifikasi langganan).", ["@Member","@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"]),
+        ("pengumuman", "Update resmi tentang server atau layanan.", ["@Member", "@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"]),
+        ("obrolan", "Ruang diskusi umum antar anggota.", ["@Member", "@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"]),
+        ("roadmap_trader", "perjalanan seorang trader yang berkelanjutan.", ["@Member", "@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"]),
+        ("core-ptl", "Pedoman Inti Dari Trader pengalaman dan Berwawasan Luas untuk Semua Member.", ["@Member","@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"]),
+        ("akademi", "Materi edukasi trading.", ["@Member", "@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"]),
+        ("free-indikator", "Indikator gratis yang dikembangkan MountAlgo.", ["@Member", "@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"]),
+        ("share-your-profits", "Bagikan profit kamu dengan Semua member.", ["@Member","@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"]),
+        ("member-voice", "Ruang obrolan suara antar anggota.", ["@Member", "@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"], "voice"),
+        ("member-stage", "Panggung utama diskusi panel & event komunitas.", ["@Member", "@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"], "stage"),
     ]),
     ("🧬|WIZARD|🚀🚀", ["@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"], [
         ("wizard-toolkits", "Tools bantu strategi trading personal.", ["@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"]),
         ("wizard-strategy", "Kumpulan strategi trading  yang sudah di packing.", ["@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"]),
         ("wizard-analisis", "Analisis market harian berkualitas tinggi.", ["@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"]),
+        ("wizard-voice", "Ruang obrolan suara eksklusif Wizard Member.", ["@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"], "voice"),
+        ("wizard-stage", "Panggung live sesi analisis & edukasi premium.", ["@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"], "stage"),
     ]),
     ("🧩|CYPHER|", ["@Admin"], [
         ("kontrol-admin", "Pengaturan admin, hak akses, dan kontrol server.", ["@Admin"]),
@@ -2059,7 +2120,7 @@ CHANNEL_PERMISSIONS = {
         }
     },
     "bantuan": {
-        "@member": {
+        "@Member": {
             "view_channel": True,
             "read_message_history": True,
             "send_messages": False,
@@ -2117,7 +2178,7 @@ CHANNEL_PERMISSIONS = {
         }
     },
     "pengumuman": {
-        "@member": {
+        "@Member": {
             "view_channel": True,
             "read_message_history": True,
             "send_messages": False,
@@ -2175,13 +2236,13 @@ CHANNEL_PERMISSIONS = {
         }
     },
     "obrolan": {
-        "@member": {
+        "@Member": {
             "view_channel": True,
             "read_message_history": True,
             "send_messages": False,
             "add_reactions": True,
-            "embed_links": False,
-            "attach_files": False,
+            "embed_links": True,
+            "attach_files": True,
             "mention_everyone": False,
             "create_public_threads": False,
             "create_private_threads": False,
@@ -2194,12 +2255,12 @@ CHANNEL_PERMISSIONS = {
             "read_message_history": True,
             "send_messages": False,
             "add_reactions": True,
-            "embed_links": False,
-            "attach_files": False,
+            "embed_links": True,
+            "attach_files": True,
             "mention_everyone": False,
             "create_public_threads": False,
             "create_private_threads": False,
-            "send_messages_in_threads": False,
+            "send_messages_in_threads": True,
             "use_external_emojis": False,
             "manage_messages": False,
         },
@@ -2208,12 +2269,12 @@ CHANNEL_PERMISSIONS = {
             "read_message_history": True,
             "send_messages": False,
             "add_reactions": True,
-            "embed_links": False,
-            "attach_files": False,
+            "embed_links": True,
+            "attach_files": True,
             "mention_everyone": False,
             "create_public_threads": False,
             "create_private_threads": False,
-            "send_messages_in_threads": False,
+            "send_messages_in_threads": True,
             "use_external_emojis": False,
             "manage_messages": False,
         },
@@ -2222,8 +2283,8 @@ CHANNEL_PERMISSIONS = {
             "read_message_history": True,
             "send_messages": False,
             "add_reactions": True,
-            "embed_links": False,
-            "attach_files": False,
+            "embed_links": True,
+            "attach_files": True,
             "mention_everyone": False,
             "create_public_threads": False,
             "create_private_threads": False,
@@ -2233,7 +2294,7 @@ CHANNEL_PERMISSIONS = {
         }
     },
     "roadmap_trader": {
-        "@member": {
+        "@Member": {
             "view_channel": True,
             "read_message_history": True,
             "send_messages": False,
@@ -2291,7 +2352,7 @@ CHANNEL_PERMISSIONS = {
         }
     },
     "core-ptl": {
-        "@member": {
+        "@Member": {
             "view_channel": True,
             "read_message_history": True,
             "send_messages": False,
@@ -2349,7 +2410,7 @@ CHANNEL_PERMISSIONS = {
         }
     },
     "akademi": {
-        "@member": {
+        "@Member": {
             "view_channel": True,
             "read_message_history": True,
             "send_messages": False,
@@ -2407,7 +2468,7 @@ CHANNEL_PERMISSIONS = {
         }
     },
     "free-indikator": {
-        "@member": {
+        "@Member": {
             "view_channel": True,
             "read_message_history": True,
             "send_messages": False,
@@ -2465,7 +2526,7 @@ CHANNEL_PERMISSIONS = {
         }
     },
     "share-your-profits": {
-        "@member": {
+        "@Member": {
             "view_channel": True,
             "read_message_history": True,
             "send_messages": False,
@@ -4057,7 +4118,7 @@ class PaymentSelect(discord.ui.Select):
             discord.SelectOption(
                 label="📱 Bayar via DANA",
                 value="dana",
-                description="Tampilkan nomor DANA dan link pembayaran"
+                description="Tampilkan opsi pembayaran DANA"
             ),
             discord.SelectOption(
                 label="🪙 Bayar via Crypto",
@@ -4215,7 +4276,7 @@ class VerifView(discord.ui.View):
             await interaction.response.send_message(embed=embed, ephemeral=True)
             return
         # Jika sudah member
-        if "member" in roles:
+        if "Member" in roles:
             embed = discord.Embed(
                 title="✅ STATUS MEMBER TERVERIFIKASI",
                 description="Kamu sudah **terverifikasi** sebagai member MountAlgo.\nTidak perlu verifikasi lagi, akses channel publik sudah terbuka.",
@@ -4237,7 +4298,7 @@ class VerifView(discord.ui.View):
         # Jika belum punya role utama (auto verifikasi)
         guild = interaction.guild
         unverified_role = discord.utils.get(guild.roles, name="Unverified")
-        member_role = discord.utils.get(guild.roles, name="member")
+        member_role = discord.utils.get(guild.roles, name="Member")
 
         # Hapus Unverified, tambahkan member
         if unverified_role and unverified_role in user.roles:
@@ -4544,6 +4605,28 @@ class BantuanView(View):
             alasan="Permintaan bantuan melalui tombol Hubungi Admin"
         )
         
+async def get_thread_creator_id(thread: discord.Thread) -> int | None:
+    """Mendapatkan ID pembuat thread asli dari embed pembuka"""
+    if not thread or not thread.guild:
+        return None
+    if thread.owner_id and thread.owner_id != thread.guild.me.id:
+        return thread.owner_id
+
+    try:
+        async for msg in thread.history(limit=5, oldest_first=True):
+            if msg.embeds:
+                for embed in msg.embeds:
+                    for field in embed.fields:
+                        if "Diprakarsai oleh" in field.name:
+                            match = re.search(r"<@!?(\d+)>", field.value)
+                            if match:
+                                return int(match.group(1))
+    except Exception as e:
+        logging.error(f"Error get_thread_creator_id: {e}")
+
+    return None
+
+
 class ThreadManagementView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
@@ -4556,6 +4639,14 @@ class ThreadManagementView(discord.ui.View):
             return False
             
         return True  # Biarkan semua user berinteraksi
+
+    async def is_owner_or_admin(self, interaction: discord.Interaction) -> bool:
+        """Mengecek apakah user adalah pembuat thread atau Admin"""
+        creator_id = await get_thread_creator_id(interaction.channel)
+        is_creator = (creator_id == interaction.user.id)
+        admin_role = discord.utils.get(interaction.guild.roles, name="Admin")
+        is_admin = (admin_role in interaction.user.roles) or interaction.user.guild_permissions.administrator
+        return is_creator or is_admin
     
     @discord.ui.button(
         label="Hapus Thread",
@@ -4563,11 +4654,9 @@ class ThreadManagementView(discord.ui.View):
         custom_id="delete_thread"
     )
     async def delete_thread(self, interaction: discord.Interaction, button: discord.ui.Button):
-        # Cek apakah user memiliki role Admin
-        admin_role = discord.utils.get(interaction.guild.roles, name="Admin")
-        if admin_role not in interaction.user.roles:
+        if not await self.is_owner_or_admin(interaction):
             await interaction.response.send_message(
-                "❌ Hanya Admin yang bisa menghapus thread!",
+                "❌ Hanya pembuat thread atau Admin yang bisa menghapus thread!",
                 ephemeral=True
             )
             return
@@ -4585,6 +4674,13 @@ class ThreadManagementView(discord.ui.View):
         custom_id="tag_members"
     )
     async def tag_members(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if not await self.is_owner_or_admin(interaction):
+            await interaction.response.send_message(
+                "❌ Hanya pembuat thread atau Admin yang bisa menggunakan fitur tag anggota!",
+                ephemeral=True
+            )
+            return
+
         await interaction.response.send_modal(ThreadTaggingModal())
 
 class ObrolanView(View):
@@ -5361,6 +5457,13 @@ class KontrolPenggunaView(discord.ui.View):
                     super().__init__(timeout=120)
                     self.page = 0
 
+                async def interaction_check(self, inter: discord.Interaction) -> bool:
+                    is_admin = any(r.name == "Admin" for r in inter.user.roles) or inter.user.guild_permissions.administrator
+                    if not is_admin:
+                        await inter.response.send_message("✘ Akses Ditolak!", ephemeral=True)
+                        return False
+                    return True
+
                 @discord.ui.button(label="⬅️", style=discord.ButtonStyle.secondary)
                 async def prev_page(self, inter: discord.Interaction, btn: discord.ui.Button):
                     self.page = (self.page - 1) % len(pages)
@@ -5462,10 +5565,6 @@ class KontrolAdminView(discord.ui.View):
     )
     async def hapus_thread_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         """Tombol untuk menghapus thread perkenalan & obrolan yang sudah usang"""
-        if not any(role.name.lower() == "admin" for role in interaction.user.roles):
-            await interaction.response.send_message("🚫 Hanya Admin yang dapat melakukan ini.", ephemeral=True)
-            return
-
         view = ConfirmHapusThreadView()
         await interaction.response.send_message(
             "⚠️ Apakah kamu yakin ingin menghapus thread **obrolan & perkenalan** yang sudah tidak aktif?",
@@ -5566,9 +5665,6 @@ class KontrolAdminView(discord.ui.View):
         row=4
     )
     async def kirim_wizard_embed(self, interaction: discord.Interaction, button: discord.ui.Button):
-        if not interaction.user.guild_permissions.administrator:
-            await interaction.response.send_message("❌ Hanya admin yang dapat menggunakan tombol ini.", ephemeral=True)
-            return
         await interaction.response.send_modal(WizardEmbedModal())
 
     # ------------------------------------------------------
@@ -5581,10 +5677,6 @@ class KontrolAdminView(discord.ui.View):
         row=4
     )
     async def setup_ulang_server(self, interaction: discord.Interaction, button: discord.ui.Button):
-        if not interaction.user.guild_permissions.administrator:
-            await interaction.response.send_message("❌ Hanya admin yang dapat menggunakan tombol ini.", ephemeral=True)
-            return
-
         view = ConfirmSetupUlangView()
         await interaction.response.send_message(
             "⚠️ **PERINGATAN KRITIS:** Apakah Anda yakin ingin melakukan Setting Up Ulang?\n"
@@ -5605,6 +5697,13 @@ class ExportDataSelectView(discord.ui.View):
 
     def __init__(self):
         super().__init__(timeout=90)
+
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        is_admin = any(r.name == "Admin" for r in interaction.user.roles) or interaction.user.guild_permissions.administrator
+        if not is_admin:
+            await interaction.response.send_message("✘ Akses Ditolak!", ephemeral=True)
+            return False
+        return True
 
     # ------------------------------------------------------
     # 📂 PILIHAN TABEL UNTUK DIEKSPOR
@@ -5740,6 +5839,13 @@ class ConfirmHapusThreadView(View):
     def __init__(self):
         super().__init__(timeout=30)
 
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        is_admin = any(r.name == "Admin" for r in interaction.user.roles) or interaction.user.guild_permissions.administrator
+        if not is_admin:
+            await interaction.response.send_message("✘ Akses Ditolak!", ephemeral=True)
+            return False
+        return True
+
     @discord.ui.button(label="✅ Ya, Hapus Thread Usang", style=discord.ButtonStyle.danger)
     async def konfirmasi_hapus(self, interaction: discord.Interaction, button: discord.ui.Button):
         await hapus_thread_usang(interaction, hari=7)
@@ -5749,10 +5855,16 @@ class ConfirmHapusThreadView(View):
         await interaction.response.send_message("Dibatalkan ❎", ephemeral=True)
         await interaction.message.delete()
 
-
 class ConfirmSetupUlangView(View):
     def __init__(self):
         super().__init__(timeout=60)
+
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        is_admin = any(r.name == "Admin" for r in interaction.user.roles) or interaction.user.guild_permissions.administrator
+        if not is_admin:
+            await interaction.response.send_message("✘ Akses Ditolak!", ephemeral=True)
+            return False
+        return True
 
     @discord.ui.button(label="✅ Ya, Setting Up Ulang Server", style=discord.ButtonStyle.danger)
     async def konfirmasi_setup(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -5878,6 +5990,13 @@ class DeleteDatabaseView(discord.ui.View):
         super().__init__(timeout=120)
         self.selected_table = None
 
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        is_admin = any(r.name == "Admin" for r in interaction.user.roles) or interaction.user.guild_permissions.administrator
+        if not is_admin:
+            await interaction.response.send_message("✘ Akses Ditolak!", ephemeral=True)
+            return False
+        return True
+
     @discord.ui.select(
         placeholder="✘ Pilih Data untuk Dihapus",
         min_values=1,
@@ -5941,10 +6060,19 @@ class ThreadTaggingModal(Modal, title="🔔 Tag Anggota dalam Thread"):
             await interaction.response.send_message("❌ Hanya bisa di thread!", ephemeral=True)
             return
             
+        creator_id = await get_thread_creator_id(thread)
+        is_creator = (creator_id == interaction.user.id)
+        admin_role = discord.utils.get(interaction.guild.roles, name="Admin")
+        is_admin = (admin_role in interaction.user.roles) if admin_role else False
+        is_admin = is_admin or interaction.user.guild_permissions.administrator
+        if not (is_creator or is_admin):
+            await interaction.response.send_message("❌ Hanya pembuat thread atau Admin yang bisa menggunakan fitur tag anggota!", ephemeral=True)
+            return
+
         await interaction.response.defer(ephemeral=True)
         
         # Daftar role yang diizinkan
-        ALLOWED_ROLES = {"member", "WizardMemberBulanan","WizardMemberTahunan", "Admin"}
+        ALLOWED_ROLES = {"Member", "WizardMemberBulanan","WizardMemberTahunan", "Admin"}
         
         target_names = [t.strip() for t in self.targets.value.split(",")]
         tagged_mentions = []
@@ -6073,7 +6201,7 @@ class PerkenalanModal(Modal, title="🏆 PERKENALAN DIRI MountAlgo 🚀"):
 
             # ================ AUTO-JOIN ================
             await thread.add_user(interaction.user)
-            target_roles = ["member", "WizardMemberBulanan","WizardMemberTahunan", "Admin"]
+            target_roles = ["Member", "WizardMemberBulanan","WizardMemberTahunan", "Admin"]
             for role_name in target_roles:
                 role = discord.utils.get(interaction.guild.roles, name=role_name)
                 if role:
@@ -6374,7 +6502,7 @@ class AddUserModal(discord.ui.Modal, title="⬈ Tambah Pengguna"):
             if existing_user:
                 existing_status = existing_user[2]
                 # Jika user sudah punya status aktif, tolak pendaftaran baru
-                if existing_status in ["member", "Admin", "WizardMemberBulanan", "WizardMemberTahunan"]:
+                if existing_status in ["Member", "Admin", "WizardMemberBulanan", "WizardMemberTahunan"]:
                     await interaction.response.send_message(
                         f"⚠️ **Pengguna sudah terdaftar!**\n"
                         f"👤 **Nama:** {existing_user[1]}\n"
@@ -6403,22 +6531,10 @@ class AddUserModal(discord.ui.Modal, title="⬈ Tambah Pengguna"):
                 expiry_date=expiry
             )
 
-            # 🎭 Terapkan role ke member di server (jika ada)
+            # 🎭 Terapkan role ke member di server (jika ada) secara paksa
             member = interaction.guild.get_member(user_id)
             if member:
-                role_name = (
-                    "WizardMemberBulanan" if status_val == "WizardMemberBulanan"
-                    else "WizardMemberTahunan" if status_val == "WizardMemberTahunan"
-                    else status_val
-                )
-                role_obj = discord.utils.get(interaction.guild.roles, name=role_name)
-                if role_obj:
-                    await member.add_roles(role_obj)
-                else:
-                    await interaction.followup.send(
-                        f"⚠️ Role `{role_name}` belum ada di server. Buat role ini terlebih dahulu.",
-                        ephemeral=True
-                    )
+                await apply_user_roles(member, status_val)
 
             # ✅ Kirim notifikasi sukses ke admin
             message = (
@@ -6591,26 +6707,8 @@ class UpgradeUserModal(discord.ui.Modal, title="⤴️ Upgrade Pengguna ke Wizar
                 days = 365
                 status = "WizardMemberTahunan"
 
-            # Pastikan role tersedia
-            role_obj = discord.utils.get(interaction.guild.roles, name=role_name)
-            if not role_obj:
-                role_obj = await interaction.guild.create_role(
-                    name=role_name,
-                    color=discord.Color.gold() if sub_type == "Bulanan" else discord.Color.purple(),
-                    reason="Role otomatis dibuat oleh sistem UpgradeUserModal"
-                )
-                logging.info(f"Role '{role_name}' otomatis dibuat.")
-
-            # Hapus role sebelumnya (member, Wizard lain, admin)
-            roles_to_remove = [
-                r for r in member.roles
-                if r.name in ["member", "WizardMemberBulanan", "WizardMemberTahunan", "Admin"]
-            ]
-            if roles_to_remove:
-                await member.remove_roles(*roles_to_remove, reason="Upgrade ke role baru WizardMember")
-
-            # Tambahkan role baru
-            await member.add_roles(role_obj, reason=f"Upgrade ke {role_name}")
+            # Terapkan role secara paksa sesuai dengan pilihan tombol
+            await apply_user_roles(member, status)
 
             # Hitung expiry date otomatis
             expiry = (datetime.utcnow() + timedelta(days=days)).isoformat()
@@ -7251,11 +7349,15 @@ class AdminAccessModal(Modal, title="Kontrol Hak Access Admin"):
                 await interaction.response.send_message("User/Role tidak ditemukan.", ephemeral=True)
                 return
             if self.action.value.lower() == "promote":
-                await member.add_roles(admin_role)
-                await interaction.response.send_message(f"User {member.mention} dipromosikan jadi admin.", ephemeral=True)
+                # Daftarkan ke database sebagai Admin
+                await Database.update_user_status(user_id, "Admin", None, None)
+                await apply_user_roles(member, "Admin")
+                await interaction.response.send_message(f"User {member.mention} dipromosikan jadi Admin.", ephemeral=True)
             elif self.action.value.lower() == "demote":
-                await member.remove_roles(admin_role)
-                await interaction.response.send_message(f"User {member.mention} dihapus dari admin.", ephemeral=True)
+                # Cabut semua dari database dan roles agar menjadi Member biasa
+                await Database.update_user_status(user_id, "member", None, None)
+                await apply_user_roles(member, "member")
+                await interaction.response.send_message(f"User {member.mention} didegradasi (demote) menjadi Member biasa di database dan roles.", ephemeral=True)
             else:
                 await interaction.response.send_message("Aksi tidak valid. Gunakan promote/demote.", ephemeral=True)
         except Exception as e:
@@ -7634,12 +7736,12 @@ class ServerBuilder:
         await ServerBuilder.safe_cleanup(guild, stats)
         
         # ----------------------- Langkah 1: Buat Role Utama -----------------------
-        core_roles = ["member", "WizardMemberBulanan","WizardMemberTahunan", "Admin", "Muted", "Unverified"]
+        core_roles = ["Member", "WizardMemberBulanan","WizardMemberTahunan", "Admin", "Muted", "Unverified"]
         for role_name in core_roles:
             try:
                 if not discord.utils.get(guild.roles, name=role_name):
                     color = {
-                        "member": discord.Color.blue(),
+                        "Member": discord.Color.blue(),
                         "WizardMemberBulanan": discord.Color.gold(),
                         "WizardMemberTahunan": discord.Color.purple(),
                         "Admin": discord.Color.red(),
@@ -7682,7 +7784,9 @@ class ServerBuilder:
                 
                 # Buat channel di dalam kategori
                 for channel_config in channels:
-                    channel_name, description, channel_roles = channel_config
+                    channel_name = channel_config[0]
+                    description = channel_config[1]
+                    channel_roles = channel_config[2]
                     try:
                         # Salin overwrites dari kategori
                         channel_overwrites = overwrites.copy()
@@ -7703,12 +7807,26 @@ class ServerBuilder:
                                             channel_overwrites[role] = perm_overwrite
                                     
                         # Buat channel
-                        channel = await category.create_text_channel(
-                            channel_name,
-                            topic=description,
-                            overwrites=channel_overwrites,
-                            reason="Auto setup"
-                        )
+                        ch_type = channel_config[3] if len(channel_config) > 3 else "text"
+                        if ch_type == "voice":
+                            channel = await category.create_voice_channel(
+                                channel_name,
+                                overwrites=channel_overwrites,
+                                reason="Auto setup"
+                            )
+                        elif ch_type == "stage":
+                            channel = await category.create_stage_channel(
+                                channel_name,
+                                overwrites=channel_overwrites,
+                                reason="Auto setup"
+                            )
+                        else:
+                            channel = await category.create_text_channel(
+                                channel_name,
+                                topic=description,
+                                overwrites=channel_overwrites,
+                                reason="Auto setup"
+                            )
                         stats["channels_created"] += 1
                         
                         # Simpan ke mapping
@@ -7767,6 +7885,15 @@ class ServerBuilder:
                 stats["errors"] += 1
                 logging.warning(f"Gagal hapus voice channel {voice_channel.name}: {str(e)}")
 
+        # Hapus semua stage channel
+        for stage_channel in guild.stage_channels:
+            try:
+                await stage_channel.delete(reason="Cleaning for server setup")
+                await asyncio.sleep(0.2)
+            except Exception as e:
+                stats["errors"] += 1
+                logging.warning(f"Gagal hapus stage channel {stage_channel.name}: {str(e)}")
+
     @staticmethod
     async def initialize_channel_content(guild: discord.Guild, channel_map: dict):
         """Isi konten awal untuk channel khusus"""
@@ -7820,7 +7947,8 @@ class ServerBuilder:
         all_roles = set()
         for kategori, roles, channels in SERVER_STRUCTURE:
             all_roles.update([r for r in roles if r != "@everyone"])
-            for _, _, ch_roles in channels:
+            for ch_info in channels:
+                ch_roles = ch_info[2]
                 all_roles.update([r for r in ch_roles if r != "@everyone"])
         for role_name in all_roles:
             await cls.get_or_create_role(guild, role_name)
@@ -7835,7 +7963,10 @@ class ServerBuilder:
                     if role:
                         overwrites[role] = discord.PermissionOverwrite(read_messages=True)
             category = await guild.create_category(kategori, overwrites=overwrites)
-            for ch_name, desc, ch_roles in channels:
+            for ch_info in channels:
+                ch_name = ch_info[0]
+                desc = ch_info[1]
+                ch_roles = ch_info[2]
                 ch_overwrites = overwrites.copy()
                 for role_name in ch_roles:
                     if role_name == "@everyone":
@@ -7844,7 +7975,13 @@ class ServerBuilder:
                         role = cls.get_role(guild, role_name)
                         if role:
                             ch_overwrites[role] = discord.PermissionOverwrite(read_messages=True)
-                ch = await guild.create_text_channel(ch_name, category=category, overwrites=ch_overwrites, topic=desc)
+                ch_type = ch_info[3] if len(ch_info) > 3 else "text"
+                if ch_type == "voice":
+                    ch = await category.create_voice_channel(ch_name, overwrites=ch_overwrites)
+                elif ch_type == "stage":
+                    ch = await category.create_stage_channel(ch_name, overwrites=ch_overwrites)
+                else:
+                    ch = await guild.create_text_channel(ch_name, category=category, overwrites=ch_overwrites, topic=desc)
                 channel_map[ch_name] = ch
         if "welcome" in channel_map:
             await send_welcome_embed(channel_map["welcome"])
@@ -8079,7 +8216,7 @@ async def on_member_join(member: discord.Member):
 
         # 2️⃣ Definisikan role yang dibutuhkan
         unverified_role = discord.utils.get(member.guild.roles, name="Unverified")
-        member_role = discord.utils.get(member.guild.roles, name="member")
+        member_role = discord.utils.get(member.guild.roles, name="Member")
         Wizard_bulanan_role = discord.utils.get(member.guild.roles, name="WizardMemberBulanan")
         Wizard_tahunan_role = discord.utils.get(member.guild.roles, name="WizardMemberTahunan")
         admin_role = discord.utils.get(member.guild.roles, name="Admin")
@@ -8214,7 +8351,7 @@ async def on_member_update(before: discord.Member, after: discord.Member):
         # Ambil role penting
         role_bulanan = "WizardMemberBulanan"
         role_tahunan = "WizardMemberTahunan"
-        role_member = "member"
+        role_member = "Member"
 
         # Deteksi upgrade
         if role_bulanan in added_roles or role_tahunan in added_roles:
@@ -8264,7 +8401,7 @@ async def on_member_update(before: discord.Member, after: discord.Member):
             has_any_Wizard = any(r in after_roles for r in [role_bulanan, role_tahunan])
             if not has_any_Wizard:
                 # Downgrade ke member
-                member_role = discord.utils.get(guild.roles, name="member")
+                member_role = discord.utils.get(guild.roles, name="Member")
                 if member_role:
                     await after.add_roles(member_role, reason="Langganan WizardMember berakhir")
 
@@ -8312,7 +8449,7 @@ async def on_message(message):
         return
     
     # Channel yang diawasi: obrolan utama dan thread turunannya
-    valid_parents = ["obrolan","share-your-profits"]
+    valid_parents = ["obrolan", "share-your-profits", "member-voice", "member-stage", "wizard-voice", "wizard-stage"]
     
     # Identifikasi channel utama
     parent_channel = message.channel
@@ -9107,7 +9244,9 @@ class CategoryMaintainer(commands.Cog):
     async def ensure_categories(self):
         """Loop setiap 10 menit untuk memastikan kategori & channel tetap aktif."""
         for guild in self.bot.guilds:
-            for cat_name, channels in SERVER_STRUCTURE.items():
+            for cat_config in SERVER_STRUCTURE:
+                cat_name = cat_config[0]
+                channels = cat_config[2]
                 category = discord.utils.get(guild.categories, name=cat_name)
                 if category is None:
                     # Buat kategori baru jika hilang
@@ -9115,11 +9254,18 @@ class CategoryMaintainer(commands.Cog):
                     print(f"[AutoFix] Kategori '{cat_name}' dibuat ulang.")
 
                 # Pastikan channel di dalam kategori ada dan aktif
-                for ch_name in channels:
+                for ch_info in channels:
+                    ch_name = ch_info[0]
                     channel = discord.utils.get(category.channels, name=ch_name)
                     if channel is None:
-                        await guild.create_text_channel(ch_name, category=category)
-                        print(f"[AutoFix] Channel '{ch_name}' dibuat di kategori '{cat_name}'.")
+                        ch_type = ch_info[3] if len(ch_info) > 3 else "text"
+                        if ch_type == "voice":
+                            await category.create_voice_channel(ch_name)
+                        elif ch_type == "stage":
+                            await category.create_stage_channel(ch_name)
+                        else:
+                            await category.create_text_channel(ch_name)
+                        print(f"[AutoFix] Channel '{ch_name}' ({ch_type}) dibuat di kategori '{cat_name}'.")
 
     @ensure_categories.before_loop
     async def before_ensure_categories(self):
