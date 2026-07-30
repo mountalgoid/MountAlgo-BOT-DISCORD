@@ -9301,30 +9301,82 @@ class CategoryMaintainer(commands.Cog):
 
     @tasks.loop(minutes=1)
     async def ensure_categories(self):
-        """Loop setiap 10 menit untuk memastikan kategori & channel tetap aktif."""
-        for guild in self.bot.guilds:
-            for cat_config in SERVER_STRUCTURE:
-                cat_name = cat_config[0]
-                channels = cat_config[2]
-                category = discord.utils.get(guild.categories, name=cat_name)
-                if category is None:
-                    # Buat kategori baru jika hilang
-                    category = await guild.create_category(cat_name)
-                    print(f"[AutoFix] Kategori '{cat_name}' dibuat ulang.")
+        """Loop setiap menit untuk memastikan kategori & channel tetap aktif dan aman."""
+        try:
+            for guild in self.bot.guilds:
+                if not guild.me.guild_permissions.manage_channels or not guild.me.guild_permissions.manage_roles:
+                    logging.warning(f"[CategoryMaintainer] Bot lacks necessary permissions (Manage Channels / Manage Roles) in guild '{guild.name}'")
+                    continue
 
-                # Pastikan channel di dalam kategori ada dan aktif
-                for ch_info in channels:
-                    ch_name = ch_info[0]
-                    channel = discord.utils.get(category.channels, name=ch_name)
-                    if channel is None:
-                        ch_type = ch_info[3] if len(ch_info) > 3 else "text"
-                        if ch_type == "voice":
-                            await category.create_voice_channel(ch_name)
-                        elif ch_type == "stage":
-                            await category.create_stage_channel(ch_name)
-                        else:
-                            await category.create_text_channel(ch_name)
-                        print(f"[AutoFix] Channel '{ch_name}' ({ch_type}) dibuat di kategori '{cat_name}'.")
+                for cat_config in SERVER_STRUCTURE:
+                    try:
+                        cat_name, allowed_roles, channels = cat_config
+                        category = discord.utils.get(guild.categories, name=cat_name)
+
+                        if category is None:
+                            # Buat kategori baru jika hilang dengan overwrites yang tepat agar aman
+                            overwrites = {
+                                guild.default_role: discord.PermissionOverwrite(read_messages=False)
+                            }
+                            for role_name in allowed_roles:
+                                role = discord.utils.get(guild.roles, name=role_name.replace("@", ""))
+                                if role:
+                                    overwrites[role] = discord.PermissionOverwrite(read_messages=True)
+
+                            try:
+                                category = await guild.create_category(cat_name, overwrites=overwrites)
+                                print(f"[AutoFix] Kategori '{cat_name}' dibuat ulang dengan pengamanan izin.")
+                            except Exception as e:
+                                logging.error(f"[CategoryMaintainer] Gagal membuat kategori '{cat_name}': {e}")
+                                continue
+
+                        # Pastikan channel di dalam kategori ada dan aktif
+                        for ch_info in channels:
+                            try:
+                                ch_name = ch_info[0]
+                                desc = ch_info[1]
+                                ch_roles = ch_info[2]
+                                channel = discord.utils.get(category.channels, name=ch_name)
+
+                                if channel is None:
+                                    # Bangun overwrites untuk channel
+                                    channel_overwrites = {
+                                        guild.default_role: discord.PermissionOverwrite(read_messages=False)
+                                    }
+                                    # Beri izin berdasarkan allowed roles kategori
+                                    for role_name in allowed_roles:
+                                        role = discord.utils.get(guild.roles, name=role_name.replace("@", ""))
+                                        if role:
+                                            channel_overwrites[role] = discord.PermissionOverwrite(read_messages=True)
+
+                                    # Modifikasi izin spesifik channel
+                                    for role_name in ch_roles:
+                                        if role_name == "@everyone":
+                                            channel_overwrites[guild.default_role] = discord.PermissionOverwrite(read_messages=True)
+                                        else:
+                                            role = discord.utils.get(guild.roles, name=role_name.replace("@", ""))
+                                            if role:
+                                                if ch_name in CHANNEL_PERMISSIONS:
+                                                    if role_name in CHANNEL_PERMISSIONS[ch_name]:
+                                                        perm_overwrite = discord.PermissionOverwrite()
+                                                        for perm, value in CHANNEL_PERMISSIONS[ch_name][role_name].items():
+                                                            setattr(perm_overwrite, perm, value)
+                                                        channel_overwrites[role] = perm_overwrite
+
+                                    ch_type = ch_info[3] if len(ch_info) > 3 else "text"
+                                    if ch_type == "voice":
+                                        await category.create_voice_channel(ch_name, overwrites=channel_overwrites)
+                                    elif ch_type == "stage":
+                                        await category.create_stage_channel(ch_name, overwrites=channel_overwrites)
+                                    else:
+                                        await category.create_text_channel(ch_name, topic=desc, overwrites=channel_overwrites)
+                                    print(f"[AutoFix] Channel '{ch_name}' ({ch_type}) dibuat di kategori '{cat_name}' dengan pengamanan izin.")
+                            except Exception as ch_err:
+                                logging.error(f"[CategoryMaintainer] Error checking/creating channel in category '{cat_name}': {ch_err}")
+                    except Exception as cat_err:
+                        logging.error(f"[CategoryMaintainer] Error checking/creating category: {cat_err}")
+        except Exception as global_err:
+            logging.error(f"[CategoryMaintainer] Critical global error in ensure_categories loop: {global_err}")
 
     @ensure_categories.before_loop
     async def before_ensure_categories(self):
