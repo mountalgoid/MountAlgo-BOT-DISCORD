@@ -1683,6 +1683,7 @@ SERVER_STRUCTURE = [
         ("member-stage", "Panggung utama diskusi panel & event komunitas.", ["@Member", "@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"], "stage"),
     ]),
     ("🧬|WIZARD|🚀🚀", ["@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"], [
+        ("wizard-lounge-chat", "Ruang diskusi khusus anggota premium Wizard.", ["@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"]),
         ("wizard-toolkits", "Tools bantu strategi trading personal.", ["@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"]),
         ("wizard-strategy", "Kumpulan strategi trading  yang sudah di packing.", ["@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"]),
         ("wizard-analisis", "Analisis market harian berkualitas tinggi.", ["@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"]),
@@ -2581,6 +2582,46 @@ CHANNEL_PERMISSIONS = {
             "send_messages_in_threads": False,
             "use_external_emojis": False,
             "manage_messages": False,
+        }
+    },
+    "wizard-lounge-chat": {
+        "@WizardMemberTahunan": {
+            "view_channel": True,
+            "read_message_history": True,
+            "send_messages": False,
+            "add_reactions": True,
+            "embed_links": True,
+            "attach_files": True,
+            "mention_everyone": False,
+            "create_public_threads": False,
+            "create_private_threads": False,
+            "send_messages_in_threads": True,
+            "use_external_emojis": False,
+            "manage_messages": False,
+        },
+        "@WizardMemberBulanan": {
+            "view_channel": True,
+            "read_message_history": True,
+            "send_messages": False,
+            "add_reactions": True,
+            "embed_links": True,
+            "attach_files": True,
+            "mention_everyone": False,
+            "create_public_threads": False,
+            "create_private_threads": False,
+            "send_messages_in_threads": True,
+            "use_external_emojis": False,
+            "manage_messages": False,
+        },
+        "@Admin": {
+            "view_channel": True,
+            "send_messages": True,
+            "add_reactions": True,
+            "embed_links": True,
+            "mention_everyone": True,
+            "manage_messages": True,
+            "manage_channels": True,
+            "manage_permissions": True,
         }
     },
     "wizard-analisis": {
@@ -3630,6 +3671,40 @@ async def send_obrolan_embed(channel: discord.TextChannel):
     
     # UPDATED: Added new button to ObrolanView
     await channel.send(embed=embed, view=ObrolanView())
+
+async def send_wizard_lounge_embed(channel: discord.TextChannel):
+    embed = discord.Embed(
+        title="⦿ WELCOME TO WIZARD LOUNGE CHAT 🚀",
+        description=(
+            "▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n"
+            "**Kanal diskusi khusus untuk anggota premium Wizard Member MountAlgo.**\n\n"
+            "➤ Fitur eksklusif:\n"
+            "‣ Diskusi strategi trading mendalam\n"
+            "‣ Kolaborasi analisis teknikal & fundamental\n"
+            "‣ Berbagi pandangan pasar real-time\n"
+            "‣ Ruang diskusi bebas dengan sesama trader premium\n"
+            "▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰"
+        ),
+        color=0x5134ff
+    )
+    embed.add_field(
+        name="💬 MULAI DISKUSI KHUSUS WIZARD",
+        value=(
+            "▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n"
+            "Gunakan tombol di bawah untuk membuat ruang diskusi/analisis baru:\n"
+            "‣ Klik **Mulai Diskusi Baru** di bawah\n"
+            "‣ Tulis topik strategi atau pair yang ingin dibahas\n"
+            "‣ Diskusikan bersama rekan Wizard lainnya\n"
+            "▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰"
+        ),
+        inline=False
+    )
+    embed.set_footer(
+        text="▰ MountAlgo WIZARD CHAT ▰ | Keep premium insights constructive",
+        icon_url="https://cdn-icons-png.flaticon.com/512/219/219983.png"
+    )
+    embed.set_thumbnail(url=channel.guild.me.display_avatar.url)
+    await channel.send(embed=embed, view=WizardLoungeView())
 
 async def send_wizard_toolkits_embed(channel: discord.TextChannel):
     """Mengirim embed alat trading dengan tombol kalkulator"""
@@ -4692,6 +4767,14 @@ class ObrolanView(View):
         await interaction.response.send_modal(PerkenalanModal())
     
     @button(label="💬 Mulai Diskusi Baru", style=discord.ButtonStyle.success, custom_id="mulai_diskusi")
+    async def mulai_diskusi(self, interaction: discord.Interaction, button: Button):
+        await interaction.response.send_modal(DiskusiModal())
+
+class WizardLoungeView(View):
+    def __init__(self):
+        super().__init__(timeout=None)
+
+    @button(label="💬 Mulai Diskusi Baru", style=discord.ButtonStyle.success, custom_id="wizard_mulai_diskusi")
     async def mulai_diskusi(self, interaction: discord.Interaction, button: Button):
         await interaction.response.send_modal(DiskusiModal())
 
@@ -7904,6 +7987,7 @@ class ServerBuilder:
             "verifikasi": lambda ch: VerificationSystem.update_verification_channel(ch),
             "bantuan": send_bantuan_embed,
             "lounge-chat": send_obrolan_embed,
+            "wizard-lounge-chat": send_wizard_lounge_embed,
             "kontrol-pengguna": send_kontrol_pengguna_embed,
             "kontrol-admin": send_kontrol_admin_embed,
             "wizard-toolkits": send_wizard_toolkits_embed
@@ -7995,6 +8079,8 @@ class ServerBuilder:
             await send_bantuan_embed(channel_map["bantuan"])
         if "lounge-chat" in channel_map:
             await send_obrolan_embed(channel_map["lounge-chat"])
+        if "wizard-lounge-chat" in channel_map:
+            await send_wizard_lounge_embed(channel_map["wizard-lounge-chat"])
         if "kontrol-pengguna" in channel_map:
             await send_kontrol_pengguna_embed(channel_map["kontrol-pengguna"])
         if "kontrol-admin" in channel_map:
@@ -8154,6 +8240,7 @@ async def on_ready():
     bot.add_view(VerifView())
     bot.add_view(BantuanView())
     bot.add_view(ObrolanView())
+    bot.add_view(WizardLoungeView())
     bot.add_view(KontrolPenggunaView())
     bot.add_view(KontrolAdminView())
     bot.add_view(WizardToolkitsView())
