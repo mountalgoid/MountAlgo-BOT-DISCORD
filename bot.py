@@ -1686,7 +1686,9 @@ SERVER_STRUCTURE = [
         ("wizard-lounge-chat", "Ruang diskusi khusus anggota premium Wizard.", ["@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"]),
         ("wizard-toolkits", "Tools bantu strategi trading personal.", ["@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"]),
         ("wizard-strategy", "Kumpulan strategi trading  yang sudah di packing.", ["@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"]),
-        ("wizard-analisis", "Analisis market harian berkualitas tinggi.", ["@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"]),
+        ("wizard-crypto", "Analisis harian aset Crypto premium.", ["@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"]),
+        ("wizard-forex", "Analisis harian Forex premium.", ["@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"]),
+        ("wizard-gold", "Analisis harian Emas & Komoditas premium.", ["@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"]),
         ("wizard-voice", "Ruang obrolan suara eksklusif Wizard Member.", ["@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"], "voice"),
         ("wizard-stage", "Panggung live sesi analisis & edukasi premium.", ["@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"], "stage"),
     ]),
@@ -2223,17 +2225,14 @@ CHANNEL_PERMISSIONS = {
         },
         "@Admin": {
             "view_channel": True,
-            "read_message_history": True,
-            "send_messages": False,
+            "send_messages": True,
             "add_reactions": True,
-            "embed_links": False,
-            "attach_files": False,
-            "mention_everyone": False,
-            "create_public_threads": False,
-            "create_private_threads": False,
-            "send_messages_in_threads": False,
-            "use_external_emojis": False,
-            "manage_messages": False,
+            "embed_links": True,
+            "attach_files": True,
+            "mention_everyone": True,
+            "manage_messages": True,
+            "manage_channels": True,
+            "manage_permissions": True,
         }
     },
     "pengumuman": {
@@ -2624,7 +2623,87 @@ CHANNEL_PERMISSIONS = {
             "manage_permissions": True,
         }
     },
-    "wizard-analisis": {
+    "wizard-crypto": {
+        "@WizardMemberTahunan": {
+            "view_channel": True,
+            "read_message_history": True,
+            "send_messages": False,
+            "add_reactions": True,
+            "embed_links": False,
+            "attach_files": False,
+            "mention_everyone": False,
+            "create_public_threads": False,
+            "create_private_threads": False,
+            "send_messages_in_threads": False,
+            "use_external_emojis": False,
+            "manage_messages": False,
+        },
+        "@WizardMemberBulanan": {
+            "view_channel": True,
+            "read_message_history": True,
+            "send_messages": False,
+            "add_reactions": True,
+            "embed_links": False,
+            "attach_files": False,
+            "mention_everyone": False,
+            "create_public_threads": False,
+            "create_private_threads": False,
+            "send_messages_in_threads": False,
+            "use_external_emojis": False,
+            "manage_messages": False,
+        },
+        "@Admin": {
+            "view_channel": True,
+            "send_messages": True,
+            "add_reactions": True,
+            "embed_links": True,
+            "mention_everyone": True,
+            "manage_messages": True,
+            "manage_channels": True,
+            "manage_permissions": True,
+        }
+    },
+    "wizard-forex": {
+        "@WizardMemberTahunan": {
+            "view_channel": True,
+            "read_message_history": True,
+            "send_messages": False,
+            "add_reactions": True,
+            "embed_links": False,
+            "attach_files": False,
+            "mention_everyone": False,
+            "create_public_threads": False,
+            "create_private_threads": False,
+            "send_messages_in_threads": False,
+            "use_external_emojis": False,
+            "manage_messages": False,
+        },
+        "@WizardMemberBulanan": {
+            "view_channel": True,
+            "read_message_history": True,
+            "send_messages": False,
+            "add_reactions": True,
+            "embed_links": False,
+            "attach_files": False,
+            "mention_everyone": False,
+            "create_public_threads": False,
+            "create_private_threads": False,
+            "send_messages_in_threads": False,
+            "use_external_emojis": False,
+            "manage_messages": False,
+        },
+        "@Admin": {
+            "view_channel": True,
+            "send_messages": True,
+            "add_reactions": True,
+            "embed_links": True,
+            "mention_everyone": True,
+            "manage_messages": True,
+            "manage_channels": True,
+            "manage_permissions": True,
+        }
+    },
+    "wizard-gold": {
         "@WizardMemberTahunan": {
             "view_channel": True,
             "read_message_history": True,
@@ -5607,6 +5686,28 @@ class UserListPaginationView(discord.ui.View):
 # ⚙️ PANEL KONTROL ADMIN VIEW
 # ==========================================================
 
+class WizardChannelSelectView(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=120)
+
+    @discord.ui.button(label="🪙 Wizard Crypto", style=discord.ButtonStyle.primary, custom_id="select_wizard_crypto")
+    async def crypto_selected(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.send_modal(
+            AnalysisModal(title="Analisis Crypto Pasar", thread_name="wizard-crypto")
+        )
+
+    @discord.ui.button(label="🌐 Wizard Forex", style=discord.ButtonStyle.primary, custom_id="select_wizard_forex")
+    async def forex_selected(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.send_modal(
+            AnalysisModal(title="Analisis Forex Pasar", thread_name="wizard-forex")
+        )
+
+    @discord.ui.button(label="🏆 Wizard Gold", style=discord.ButtonStyle.primary, custom_id="select_wizard_gold")
+    async def gold_selected(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.send_modal(
+            AnalysisModal(title="Analisis Gold/Komoditas Pasar", thread_name="wizard-gold")
+        )
+
 class KontrolAdminView(discord.ui.View):
     """Panel kontrol utama untuk Admin MountAlgo"""
     def __init__(self):
@@ -5711,31 +5812,19 @@ class KontrolAdminView(discord.ui.View):
         await interaction.followup.send(embed=embed, ephemeral=True)
 
     # ------------------------------------------------------
-    # 📊 Tombol: Kirim Analisis Fundamental
+    # 📊 Tombol: Kirim Analisis Pasar
     # ------------------------------------------------------
     @discord.ui.button(
-        label="Kirim Analisis Fundamental",
+        label="Kirim Analisis Pasar",
         style=discord.ButtonStyle.secondary,
-        custom_id="admin:send_fundamental_analysis",
+        custom_id="admin:send_market_analysis",
         row=3
     )
-    async def send_fundamental_analysis(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await interaction.response.send_modal(
-            AnalysisModal(title="Analisis Fundamental", thread_name="1.analisa fundamental")
-        )
-
-    # ------------------------------------------------------
-    # 📈 Tombol: Kirim Analisis Teknikal
-    # ------------------------------------------------------
-    @discord.ui.button(
-        label="Kirim Analisis Teknikal",
-        style=discord.ButtonStyle.secondary,
-        custom_id="admin:send_technical_analysis",
-        row=3
-    )
-    async def send_technical_analysis(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await interaction.response.send_modal(
-            AnalysisModal(title="Analisis Teknikal", thread_name="2.analisa teknikal")
+    async def send_market_analysis(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.send_message(
+            "📊 **Pilih Channel Analisis Pasar:**\nSilakan pilih channel tujuan pengiriman analisis pasar di bawah ini:",
+            view=WizardChannelSelectView(),
+            ephemeral=True
         )
 
     # ------------------------------------------------------
@@ -7510,9 +7599,12 @@ class AnalysisModal(Modal, title="Kirim Analisis"):
                 await interaction.followup.send(f"⚠️ URL tidak valid: `{url}`", ephemeral=True)
                 return
 
-        thread = discord.utils.get(interaction.guild.threads, name=self.thread_name)
-        if not thread:
-            await interaction.followup.send(f"❌ Thread `{self.thread_name}` tidak ditemukan.", ephemeral=True)
+        target = discord.utils.get(interaction.guild.threads, name=self.thread_name)
+        if not target:
+            target = discord.utils.get(interaction.guild.text_channels, name=self.thread_name)
+
+        if not target:
+            await interaction.followup.send(f"❌ Thread atau Channel `{self.thread_name}` tidak ditemukan.", ephemeral=True)
             return
 
         if image_url and "tradingview.com/x/" in image_url:
@@ -7549,11 +7641,12 @@ class AnalysisModal(Modal, title="Kirim Analisis"):
 
         try:
             if files_to_send:
-                await thread.send(embed=embed, files=files_to_send)
+                await target.send(embed=embed, files=files_to_send)
             else:
-                await thread.send(embed=embed)
+                await target.send(embed=embed)
 
-            await interaction.followup.send(f"✅ Analisis berhasil dikirim ke thread `{self.thread_name}`.", ephemeral=True)
+            target_type = "thread" if isinstance(target, discord.Thread) else "channel"
+            await interaction.followup.send(f"✅ Analisis berhasil dikirim ke {target_type} `{self.thread_name}`.", ephemeral=True)
         except discord.errors.NotFound:
             print("[WARNING] Follow-up webhook sudah tidak aktif.")
         except Exception as e:
