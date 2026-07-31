@@ -197,7 +197,7 @@ Fungsi-fungsi untuk validasi dan lainya
 """
 async def hapus_thread_usang(interaction: discord.Interaction, hari: int = 14):
     """
-    Menghapus semua thread di channel 'obrolan' atau 'perkenalan'
+    Menghapus semua thread di channel 'lounge-chat' atau 'perkenalan'
     yang tidak aktif lebih dari <hari> hari.
     """
     await interaction.response.defer(thinking=True, ephemeral=True)
@@ -208,7 +208,7 @@ async def hapus_thread_usang(interaction: discord.Interaction, hari: int = 14):
     total_deleted = 0
 
     for channel in guild.text_channels:
-        if any(k in channel.name.lower() for k in ["obrolan", "perkenalan"]):
+        if any(k in channel.name.lower() for k in ["lounge-chat", "perkenalan"]):
             # Ambil semua thread aktif + arsip
             threads = channel.threads + [t async for t in channel.archived_threads(limit=None)]
             for thread in threads:
@@ -1121,7 +1121,7 @@ class VerificationSystem:
                     "Anda sekarang memiliki akses penuh ke server MountAlgo!\n\n"
                     "Silakan jelajahi:\n"
                     "➩ 📢 #pengumuman untuk informasi terkini\n"
-                    "➩ 💬 #obrolan untuk berdiskusi\n"
+                    "➩ 💬 #lounge-chat untuk berdiskusi\n"
                     "➩ 📈 #akademi untuk belajar trading"
                 )
             except:
@@ -1673,19 +1673,26 @@ SERVER_STRUCTURE = [
     ("🔥|MEMBER|", ["@Member", "@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"], [
         ("bantuan", "Panduan cepat untuk pengguna baru (FAQ & verifikasi langganan).", ["@Member","@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"]),
         ("pengumuman", "Update resmi tentang server atau layanan.", ["@Member", "@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"]),
-        ("obrolan", "Ruang diskusi umum antar anggota.", ["@Member", "@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"]),
+        ("lounge-chat", "Ruang diskusi umum antar anggota.", ["@Member", "@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"]),
         ("roadmap_trader", "perjalanan seorang trader yang berkelanjutan.", ["@Member", "@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"]),
-        ("core-ptl", "Pedoman Inti Dari Trader pengalaman dan Berwawasan Luas untuk Semua Member.", ["@Member","@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"]),
         ("akademi", "Materi edukasi trading.", ["@Member", "@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"]),
         ("free-indikator", "Indikator gratis yang dikembangkan MountAlgo.", ["@Member", "@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"]),
         ("share-your-profits", "Bagikan profit kamu dengan Semua member.", ["@Member","@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"]),
         ("member-voice", "Ruang obrolan suara antar anggota.", ["@Member", "@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"], "voice"),
         ("member-stage", "Panggung utama diskusi panel & event komunitas.", ["@Member", "@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"], "stage"),
     ]),
+    ("🌐|MNA NETWORK|", ["@Member", "@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"], [
+        ("id", "Informasi identitas dan status akun.", ["@Member", "@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"]),
+        ("wallet", "Informasi dompet digital dan transaksi.", ["@Member", "@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"]),
+        ("pasar-p2p", "Pasar Peer-to-Peer (P2P).", ["@Member", "@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"]),
+    ]),
     ("🧬|WIZARD|🚀🚀", ["@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"], [
+        ("wizard-lounge-chat", "Ruang diskusi khusus anggota premium Wizard.", ["@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"]),
         ("wizard-toolkits", "Tools bantu strategi trading personal.", ["@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"]),
         ("wizard-strategy", "Kumpulan strategi trading  yang sudah di packing.", ["@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"]),
-        ("wizard-analisis", "Analisis market harian berkualitas tinggi.", ["@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"]),
+        ("wizard-crypto", "Analisis harian aset Crypto premium.", ["@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"]),
+        ("wizard-forex", "Analisis harian Forex premium.", ["@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"]),
+        ("wizard-gold", "Analisis harian Emas & Komoditas premium.", ["@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"]),
         ("wizard-voice", "Ruang obrolan suara eksklusif Wizard Member.", ["@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"], "voice"),
         ("wizard-stage", "Panggung live sesi analisis & edukasi premium.", ["@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"], "stage"),
     ]),
@@ -2177,6 +2184,171 @@ CHANNEL_PERMISSIONS = {
             "manage_messages": False,
         }
     },
+    "id": {
+        "@Member": {
+            "view_channel": True,
+            "read_message_history": True,
+            "send_messages": False,
+            "add_reactions": True,
+            "embed_links": False,
+            "attach_files": False,
+            "mention_everyone": False,
+            "create_public_threads": False,
+            "create_private_threads": False,
+            "send_messages_in_threads": False,
+            "use_external_emojis": False,
+            "manage_messages": False,
+        },
+        "@WizardMemberTahunan": {
+            "view_channel": True,
+            "read_message_history": True,
+            "send_messages": False,
+            "add_reactions": True,
+            "embed_links": False,
+            "attach_files": False,
+            "mention_everyone": False,
+            "create_public_threads": False,
+            "create_private_threads": False,
+            "send_messages_in_threads": False,
+            "use_external_emojis": False,
+            "manage_messages": False,
+        },
+        "@WizardMemberBulanan": {
+            "view_channel": True,
+            "read_message_history": True,
+            "send_messages": False,
+            "add_reactions": True,
+            "embed_links": False,
+            "attach_files": False,
+            "mention_everyone": False,
+            "create_public_threads": False,
+            "create_private_threads": False,
+            "send_messages_in_threads": False,
+            "use_external_emojis": False,
+            "manage_messages": False,
+        },
+        "@Admin": {
+            "view_channel": True,
+            "send_messages": True,
+            "add_reactions": True,
+            "embed_links": True,
+            "attach_files": True,
+            "mention_everyone": True,
+            "manage_messages": True,
+            "manage_channels": True,
+            "manage_permissions": True,
+        }
+    },
+    "wallet": {
+        "@Member": {
+            "view_channel": True,
+            "read_message_history": True,
+            "send_messages": False,
+            "add_reactions": True,
+            "embed_links": False,
+            "attach_files": False,
+            "mention_everyone": False,
+            "create_public_threads": False,
+            "create_private_threads": False,
+            "send_messages_in_threads": False,
+            "use_external_emojis": False,
+            "manage_messages": False,
+        },
+        "@WizardMemberTahunan": {
+            "view_channel": True,
+            "read_message_history": True,
+            "send_messages": False,
+            "add_reactions": True,
+            "embed_links": False,
+            "attach_files": False,
+            "mention_everyone": False,
+            "create_public_threads": False,
+            "create_private_threads": False,
+            "send_messages_in_threads": False,
+            "use_external_emojis": False,
+            "manage_messages": False,
+        },
+        "@WizardMemberBulanan": {
+            "view_channel": True,
+            "read_message_history": True,
+            "send_messages": False,
+            "add_reactions": True,
+            "embed_links": False,
+            "attach_files": False,
+            "mention_everyone": False,
+            "create_public_threads": False,
+            "create_private_threads": False,
+            "send_messages_in_threads": False,
+            "use_external_emojis": False,
+            "manage_messages": False,
+        },
+        "@Admin": {
+            "view_channel": True,
+            "send_messages": True,
+            "add_reactions": True,
+            "embed_links": True,
+            "attach_files": True,
+            "mention_everyone": True,
+            "manage_messages": True,
+            "manage_channels": True,
+            "manage_permissions": True,
+        }
+    },
+    "pasar-p2p": {
+        "@Member": {
+            "view_channel": True,
+            "read_message_history": True,
+            "send_messages": False,
+            "add_reactions": True,
+            "embed_links": False,
+            "attach_files": False,
+            "mention_everyone": False,
+            "create_public_threads": False,
+            "create_private_threads": False,
+            "send_messages_in_threads": False,
+            "use_external_emojis": False,
+            "manage_messages": False,
+        },
+        "@WizardMemberTahunan": {
+            "view_channel": True,
+            "read_message_history": True,
+            "send_messages": False,
+            "add_reactions": True,
+            "embed_links": False,
+            "attach_files": False,
+            "mention_everyone": False,
+            "create_public_threads": False,
+            "create_private_threads": False,
+            "send_messages_in_threads": False,
+            "use_external_emojis": False,
+            "manage_messages": False,
+        },
+        "@WizardMemberBulanan": {
+            "view_channel": True,
+            "read_message_history": True,
+            "send_messages": False,
+            "add_reactions": True,
+            "embed_links": False,
+            "attach_files": False,
+            "mention_everyone": False,
+            "create_public_threads": False,
+            "create_private_threads": False,
+            "send_messages_in_threads": False,
+            "use_external_emojis": False,
+            "manage_messages": False,
+        },
+        "@Admin": {
+            "view_channel": True,
+            "send_messages": True,
+            "add_reactions": True,
+            "embed_links": True,
+            "attach_files": True,
+            "mention_everyone": True,
+            "manage_messages": True,
+            "manage_channels": True,
+            "manage_permissions": True,
+        }
+    },
     "pengumuman": {
         "@Member": {
             "view_channel": True,
@@ -2235,7 +2407,7 @@ CHANNEL_PERMISSIONS = {
             "manage_messages": False,
         }
     },
-    "obrolan": {
+    "lounge-chat": {
         "@Member": {
             "view_channel": True,
             "read_message_history": True,
@@ -2299,64 +2471,6 @@ CHANNEL_PERMISSIONS = {
             "read_message_history": True,
             "send_messages": False,
             "add_reactions": False,
-            "embed_links": False,
-            "attach_files": False,
-            "mention_everyone": False,
-            "create_public_threads": False,
-            "create_private_threads": False,
-            "send_messages_in_threads": False,
-            "use_external_emojis": False,
-            "manage_messages": False,
-        },
-        "@WizardMemberTahunan": {
-            "view_channel": True,
-            "read_message_history": True,
-            "send_messages": False,
-            "add_reactions": True,
-            "embed_links": False,
-            "attach_files": False,
-            "mention_everyone": False,
-            "create_public_threads": False,
-            "create_private_threads": False,
-            "send_messages_in_threads": False,
-            "use_external_emojis": False,
-            "manage_messages": False,
-        },
-        "@WizardMemberBulanan": {
-            "view_channel": True,
-            "read_message_history": True,
-            "send_messages": False,
-            "add_reactions": True,
-            "embed_links": False,
-            "attach_files": False,
-            "mention_everyone": False,
-            "create_public_threads": False,
-            "create_private_threads": False,
-            "send_messages_in_threads": False,
-            "use_external_emojis": False,
-            "manage_messages": False,
-        },
-        "@Admin": {
-            "view_channel": True,
-            "read_message_history": True,
-            "send_messages": False,
-            "add_reactions": True,
-            "embed_links": False,
-            "attach_files": False,
-            "mention_everyone": False,
-            "create_public_threads": False,
-            "create_private_threads": False,
-            "send_messages_in_threads": False,
-            "use_external_emojis": False,
-            "manage_messages": False,
-        }
-    },
-    "core-ptl": {
-        "@Member": {
-            "view_channel": True,
-            "read_message_history": True,
-            "send_messages": False,
-            "add_reactions": True,
             "embed_links": False,
             "attach_files": False,
             "mention_everyone": False,
@@ -2583,7 +2697,127 @@ CHANNEL_PERMISSIONS = {
             "manage_messages": False,
         }
     },
-    "wizard-analisis": {
+    "wizard-lounge-chat": {
+        "@WizardMemberTahunan": {
+            "view_channel": True,
+            "read_message_history": True,
+            "send_messages": False,
+            "add_reactions": True,
+            "embed_links": True,
+            "attach_files": True,
+            "mention_everyone": False,
+            "create_public_threads": False,
+            "create_private_threads": False,
+            "send_messages_in_threads": True,
+            "use_external_emojis": False,
+            "manage_messages": False,
+        },
+        "@WizardMemberBulanan": {
+            "view_channel": True,
+            "read_message_history": True,
+            "send_messages": False,
+            "add_reactions": True,
+            "embed_links": True,
+            "attach_files": True,
+            "mention_everyone": False,
+            "create_public_threads": False,
+            "create_private_threads": False,
+            "send_messages_in_threads": True,
+            "use_external_emojis": False,
+            "manage_messages": False,
+        },
+        "@Admin": {
+            "view_channel": True,
+            "send_messages": True,
+            "add_reactions": True,
+            "embed_links": True,
+            "mention_everyone": True,
+            "manage_messages": True,
+            "manage_channels": True,
+            "manage_permissions": True,
+        }
+    },
+    "wizard-crypto": {
+        "@WizardMemberTahunan": {
+            "view_channel": True,
+            "read_message_history": True,
+            "send_messages": False,
+            "add_reactions": True,
+            "embed_links": False,
+            "attach_files": False,
+            "mention_everyone": False,
+            "create_public_threads": False,
+            "create_private_threads": False,
+            "send_messages_in_threads": False,
+            "use_external_emojis": False,
+            "manage_messages": False,
+        },
+        "@WizardMemberBulanan": {
+            "view_channel": True,
+            "read_message_history": True,
+            "send_messages": False,
+            "add_reactions": True,
+            "embed_links": False,
+            "attach_files": False,
+            "mention_everyone": False,
+            "create_public_threads": False,
+            "create_private_threads": False,
+            "send_messages_in_threads": False,
+            "use_external_emojis": False,
+            "manage_messages": False,
+        },
+        "@Admin": {
+            "view_channel": True,
+            "send_messages": True,
+            "add_reactions": True,
+            "embed_links": True,
+            "mention_everyone": True,
+            "manage_messages": True,
+            "manage_channels": True,
+            "manage_permissions": True,
+        }
+    },
+    "wizard-forex": {
+        "@WizardMemberTahunan": {
+            "view_channel": True,
+            "read_message_history": True,
+            "send_messages": False,
+            "add_reactions": True,
+            "embed_links": False,
+            "attach_files": False,
+            "mention_everyone": False,
+            "create_public_threads": False,
+            "create_private_threads": False,
+            "send_messages_in_threads": False,
+            "use_external_emojis": False,
+            "manage_messages": False,
+        },
+        "@WizardMemberBulanan": {
+            "view_channel": True,
+            "read_message_history": True,
+            "send_messages": False,
+            "add_reactions": True,
+            "embed_links": False,
+            "attach_files": False,
+            "mention_everyone": False,
+            "create_public_threads": False,
+            "create_private_threads": False,
+            "send_messages_in_threads": False,
+            "use_external_emojis": False,
+            "manage_messages": False,
+        },
+        "@Admin": {
+            "view_channel": True,
+            "send_messages": True,
+            "add_reactions": True,
+            "embed_links": True,
+            "mention_everyone": True,
+            "manage_messages": True,
+            "manage_channels": True,
+            "manage_permissions": True,
+        }
+    },
+    "wizard-gold": {
         "@WizardMemberTahunan": {
             "view_channel": True,
             "read_message_history": True,
@@ -3383,7 +3617,7 @@ def send_faq_embed():
         value=(
             "① Baca peraturan di #peraturan\n"
             "② Lakukan verifikasi di #verifikasi\n"
-            "③ Perkenalkan diri di #obrolan\n"
+            "③ Perkenalkan diri di #lounge-chat\n"
             "④ Akses channel edukasi dasar\n"
             "⑤ Untuk fitur premium → langganan WizardMember\n"
             "▰▰▰▰▰▰▰▰▰▰▰▰▰▰"
@@ -3630,6 +3864,40 @@ async def send_obrolan_embed(channel: discord.TextChannel):
     
     # UPDATED: Added new button to ObrolanView
     await channel.send(embed=embed, view=ObrolanView())
+
+async def send_wizard_lounge_embed(channel: discord.TextChannel):
+    embed = discord.Embed(
+        title="⦿ WELCOME TO WIZARD LOUNGE CHAT 🚀",
+        description=(
+            "▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n"
+            "**Kanal diskusi khusus untuk anggota premium Wizard Member MountAlgo.**\n\n"
+            "➤ Fitur eksklusif:\n"
+            "‣ Diskusi strategi trading mendalam\n"
+            "‣ Kolaborasi analisis teknikal & fundamental\n"
+            "‣ Berbagi pandangan pasar real-time\n"
+            "‣ Ruang diskusi bebas dengan sesama trader premium\n"
+            "▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰"
+        ),
+        color=0x5134ff
+    )
+    embed.add_field(
+        name="💬 MULAI DISKUSI KHUSUS WIZARD",
+        value=(
+            "▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n"
+            "Gunakan tombol di bawah untuk membuat ruang diskusi/analisis baru:\n"
+            "‣ Klik **Mulai Diskusi Baru** di bawah\n"
+            "‣ Tulis topik strategi atau pair yang ingin dibahas\n"
+            "‣ Diskusikan bersama rekan Wizard lainnya\n"
+            "▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰"
+        ),
+        inline=False
+    )
+    embed.set_footer(
+        text="▰ MountAlgo WIZARD CHAT ▰ | Keep premium insights constructive",
+        icon_url="https://cdn-icons-png.flaticon.com/512/219/219983.png"
+    )
+    embed.set_thumbnail(url=channel.guild.me.display_avatar.url)
+    await channel.send(embed=embed, view=WizardLoungeView())
 
 async def send_wizard_toolkits_embed(channel: discord.TextChannel):
     """Mengirim embed alat trading dengan tombol kalkulator"""
@@ -4285,7 +4553,7 @@ class VerifView(discord.ui.View):
             embed.add_field(
                 name="Tips Member",
                 value=(
-                    "• Aktif diskusi di #obrolan\n"
+                    "• Aktif diskusi di #lounge-chat\n"
                     "• Baca materi di #akademi\n"
                     "• Upgrade ke WizardMember untuk fitur premium"
                 ),
@@ -4330,7 +4598,7 @@ class VerifView(discord.ui.View):
             value=(
                 "• **#pengumuman** — Info terbaru & event\n"
                 "• **#akademi** — Belajar trading dari nol\n"
-                "• **#obrolan** — Diskusi bebas & sharing"
+                "• **#lounge-chat** — Diskusi bebas & sharing"
             ),
             inline=False
         )
@@ -4692,6 +4960,14 @@ class ObrolanView(View):
         await interaction.response.send_modal(PerkenalanModal())
     
     @button(label="💬 Mulai Diskusi Baru", style=discord.ButtonStyle.success, custom_id="mulai_diskusi")
+    async def mulai_diskusi(self, interaction: discord.Interaction, button: Button):
+        await interaction.response.send_modal(DiskusiModal())
+
+class WizardLoungeView(View):
+    def __init__(self):
+        super().__init__(timeout=None)
+
+    @button(label="💬 Mulai Diskusi Baru", style=discord.ButtonStyle.success, custom_id="wizard_mulai_diskusi")
     async def mulai_diskusi(self, interaction: discord.Interaction, button: Button):
         await interaction.response.send_modal(DiskusiModal())
 
@@ -5524,6 +5800,28 @@ class UserListPaginationView(discord.ui.View):
 # ⚙️ PANEL KONTROL ADMIN VIEW
 # ==========================================================
 
+class WizardChannelSelectView(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=120)
+
+    @discord.ui.button(label="🪙 Wizard Crypto", style=discord.ButtonStyle.primary, custom_id="select_wizard_crypto")
+    async def crypto_selected(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.send_modal(
+            AnalysisModal(title="Analisis Crypto Pasar", thread_name="wizard-crypto")
+        )
+
+    @discord.ui.button(label="🌐 Wizard Forex", style=discord.ButtonStyle.primary, custom_id="select_wizard_forex")
+    async def forex_selected(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.send_modal(
+            AnalysisModal(title="Analisis Forex Pasar", thread_name="wizard-forex")
+        )
+
+    @discord.ui.button(label="🏆 Wizard Gold", style=discord.ButtonStyle.primary, custom_id="select_wizard_gold")
+    async def gold_selected(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.send_modal(
+            AnalysisModal(title="Analisis Gold/Komoditas Pasar", thread_name="wizard-gold")
+        )
+
 class KontrolAdminView(discord.ui.View):
     """Panel kontrol utama untuk Admin MountAlgo"""
     def __init__(self):
@@ -5628,31 +5926,19 @@ class KontrolAdminView(discord.ui.View):
         await interaction.followup.send(embed=embed, ephemeral=True)
 
     # ------------------------------------------------------
-    # 📊 Tombol: Kirim Analisis Fundamental
+    # 📊 Tombol: Kirim Analisis Pasar
     # ------------------------------------------------------
     @discord.ui.button(
-        label="Kirim Analisis Fundamental",
+        label="Kirim Analisis Pasar",
         style=discord.ButtonStyle.secondary,
-        custom_id="admin:send_fundamental_analysis",
+        custom_id="admin:send_market_analysis",
         row=3
     )
-    async def send_fundamental_analysis(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await interaction.response.send_modal(
-            AnalysisModal(title="Analisis Fundamental", thread_name="1.analisa fundamental")
-        )
-
-    # ------------------------------------------------------
-    # 📈 Tombol: Kirim Analisis Teknikal
-    # ------------------------------------------------------
-    @discord.ui.button(
-        label="Kirim Analisis Teknikal",
-        style=discord.ButtonStyle.secondary,
-        custom_id="admin:send_technical_analysis",
-        row=3
-    )
-    async def send_technical_analysis(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await interaction.response.send_modal(
-            AnalysisModal(title="Analisis Teknikal", thread_name="2.analisa teknikal")
+    async def send_market_analysis(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.send_message(
+            "📊 **Pilih Channel Analisis Pasar:**\nSilakan pilih channel tujuan pengiriman analisis pasar di bawah ini:",
+            view=WizardChannelSelectView(),
+            ephemeral=True
         )
 
     # ------------------------------------------------------
@@ -6188,9 +6474,9 @@ class PerkenalanModal(Modal, title="🏆 PERKENALAN DIRI MountAlgo 🚀"):
         await interaction.response.defer(ephemeral=True)
         try:
             # ================ BUAT THREAD ================
-            general_channel = discord.utils.get(interaction.guild.text_channels, name="obrolan")
+            general_channel = discord.utils.get(interaction.guild.text_channels, name="lounge-chat")
             if not general_channel:
-                return await interaction.followup.send("❌ Channel #obrolan tidak ditemukan!", ephemeral=True)
+                return await interaction.followup.send("❌ Channel #lounge-chat tidak ditemukan!", ephemeral=True)
 
             timestamp = datetime.now().strftime("%d %b %Y")
             thread = await general_channel.create_thread(
@@ -7427,9 +7713,12 @@ class AnalysisModal(Modal, title="Kirim Analisis"):
                 await interaction.followup.send(f"⚠️ URL tidak valid: `{url}`", ephemeral=True)
                 return
 
-        thread = discord.utils.get(interaction.guild.threads, name=self.thread_name)
-        if not thread:
-            await interaction.followup.send(f"❌ Thread `{self.thread_name}` tidak ditemukan.", ephemeral=True)
+        target = discord.utils.get(interaction.guild.threads, name=self.thread_name)
+        if not target:
+            target = discord.utils.get(interaction.guild.text_channels, name=self.thread_name)
+
+        if not target:
+            await interaction.followup.send(f"❌ Thread atau Channel `{self.thread_name}` tidak ditemukan.", ephemeral=True)
             return
 
         if image_url and "tradingview.com/x/" in image_url:
@@ -7466,11 +7755,12 @@ class AnalysisModal(Modal, title="Kirim Analisis"):
 
         try:
             if files_to_send:
-                await thread.send(embed=embed, files=files_to_send)
+                await target.send(embed=embed, files=files_to_send)
             else:
-                await thread.send(embed=embed)
+                await target.send(embed=embed)
 
-            await interaction.followup.send(f"✅ Analisis berhasil dikirim ke thread `{self.thread_name}`.", ephemeral=True)
+            target_type = "thread" if isinstance(target, discord.Thread) else "channel"
+            await interaction.followup.send(f"✅ Analisis berhasil dikirim ke {target_type} `{self.thread_name}`.", ephemeral=True)
         except discord.errors.NotFound:
             print("[WARNING] Follow-up webhook sudah tidak aktif.")
         except Exception as e:
@@ -7903,7 +8193,8 @@ class ServerBuilder:
             "disclaimer": send_disclaimer_embed,
             "verifikasi": lambda ch: VerificationSystem.update_verification_channel(ch),
             "bantuan": send_bantuan_embed,
-            "obrolan": send_obrolan_embed,
+            "lounge-chat": send_obrolan_embed,
+            "wizard-lounge-chat": send_wizard_lounge_embed,
             "kontrol-pengguna": send_kontrol_pengguna_embed,
             "kontrol-admin": send_kontrol_admin_embed,
             "wizard-toolkits": send_wizard_toolkits_embed
@@ -7993,8 +8284,10 @@ class ServerBuilder:
             await send_verifikasi_embed(channel_map["verifikasi"])
         if "bantuan" in channel_map:
             await send_bantuan_embed(channel_map["bantuan"])
-        if "obrolan" in channel_map:
-            await send_obrolan_embed(channel_map["obrolan"])
+        if "lounge-chat" in channel_map:
+            await send_obrolan_embed(channel_map["lounge-chat"])
+        if "wizard-lounge-chat" in channel_map:
+            await send_wizard_lounge_embed(channel_map["wizard-lounge-chat"])
         if "kontrol-pengguna" in channel_map:
             await send_kontrol_pengguna_embed(channel_map["kontrol-pengguna"])
         if "kontrol-admin" in channel_map:
@@ -8154,6 +8447,7 @@ async def on_ready():
     bot.add_view(VerifView())
     bot.add_view(BantuanView())
     bot.add_view(ObrolanView())
+    bot.add_view(WizardLoungeView())
     bot.add_view(KontrolPenggunaView())
     bot.add_view(KontrolAdminView())
     bot.add_view(WizardToolkitsView())
@@ -8448,8 +8742,8 @@ async def on_message(message):
     if message.author.bot:
         return
     
-    # Channel yang diawasi: obrolan utama dan thread turunannya
-    valid_parents = ["obrolan", "share-your-profits", "member-voice", "member-stage", "wizard-voice", "wizard-stage"]
+    # Channel yang diawasi: lounge-chat utama dan thread turunannya
+    valid_parents = ["lounge-chat", "share-your-profits", "member-voice", "member-stage", "wizard-voice", "wizard-stage"]
     
     # Identifikasi channel utama
     parent_channel = message.channel
@@ -8463,7 +8757,7 @@ async def on_message(message):
         return
     
     # 1. Deteksi spam di channel utama saja (bukan thread)
-    if not isinstance(message.channel, discord.Thread) and message.channel.name == "obrolan":
+    if not isinstance(message.channel, discord.Thread) and message.channel.name == "lounge-chat":
         spam_data = await Database.get_spam(message.author.id)
         if spam_data:
             last_msg, count = spam_data
@@ -8583,7 +8877,7 @@ async def unmute_later(member, mute_role, duration_minutes):
     await member.remove_roles(mute_role)
     await Database.reset_violations(member.id)
     try:
-        await member.send("Mute kamu sudah dicabut. Silakan gunakan #obrolan dengan bijak dan patuhi peraturan server.")
+        await member.send("Mute kamu sudah dicabut. Silakan gunakan #lounge-chat dengan bijak and patuhi peraturan server.")
     except:
         pass
 
@@ -9098,8 +9392,8 @@ async def help(ctx):
 async def kontrolpengguna(ctx):
     await send_kontrol_pengguna_embed(ctx.channel)
 
-@bot.command()
-async def obrolan(ctx):
+@bot.command(name="loungechat", aliases=["obrolan"])
+async def loungechat(ctx):
     await send_obrolan_embed(ctx.channel)
 
 @bot.command()
@@ -9242,30 +9536,82 @@ class CategoryMaintainer(commands.Cog):
 
     @tasks.loop(minutes=1)
     async def ensure_categories(self):
-        """Loop setiap 10 menit untuk memastikan kategori & channel tetap aktif."""
-        for guild in self.bot.guilds:
-            for cat_config in SERVER_STRUCTURE:
-                cat_name = cat_config[0]
-                channels = cat_config[2]
-                category = discord.utils.get(guild.categories, name=cat_name)
-                if category is None:
-                    # Buat kategori baru jika hilang
-                    category = await guild.create_category(cat_name)
-                    print(f"[AutoFix] Kategori '{cat_name}' dibuat ulang.")
+        """Loop setiap menit untuk memastikan kategori & channel tetap aktif dan aman."""
+        try:
+            for guild in self.bot.guilds:
+                if not guild.me.guild_permissions.manage_channels or not guild.me.guild_permissions.manage_roles:
+                    logging.warning(f"[CategoryMaintainer] Bot lacks necessary permissions (Manage Channels / Manage Roles) in guild '{guild.name}'")
+                    continue
 
-                # Pastikan channel di dalam kategori ada dan aktif
-                for ch_info in channels:
-                    ch_name = ch_info[0]
-                    channel = discord.utils.get(category.channels, name=ch_name)
-                    if channel is None:
-                        ch_type = ch_info[3] if len(ch_info) > 3 else "text"
-                        if ch_type == "voice":
-                            await category.create_voice_channel(ch_name)
-                        elif ch_type == "stage":
-                            await category.create_stage_channel(ch_name)
-                        else:
-                            await category.create_text_channel(ch_name)
-                        print(f"[AutoFix] Channel '{ch_name}' ({ch_type}) dibuat di kategori '{cat_name}'.")
+                for cat_config in SERVER_STRUCTURE:
+                    try:
+                        cat_name, allowed_roles, channels = cat_config
+                        category = discord.utils.get(guild.categories, name=cat_name)
+
+                        if category is None:
+                            # Buat kategori baru jika hilang dengan overwrites yang tepat agar aman
+                            overwrites = {
+                                guild.default_role: discord.PermissionOverwrite(read_messages=False)
+                            }
+                            for role_name in allowed_roles:
+                                role = discord.utils.get(guild.roles, name=role_name.replace("@", ""))
+                                if role:
+                                    overwrites[role] = discord.PermissionOverwrite(read_messages=True)
+
+                            try:
+                                category = await guild.create_category(cat_name, overwrites=overwrites)
+                                print(f"[AutoFix] Kategori '{cat_name}' dibuat ulang dengan pengamanan izin.")
+                            except Exception as e:
+                                logging.error(f"[CategoryMaintainer] Gagal membuat kategori '{cat_name}': {e}")
+                                continue
+
+                        # Pastikan channel di dalam kategori ada dan aktif
+                        for ch_info in channels:
+                            try:
+                                ch_name = ch_info[0]
+                                desc = ch_info[1]
+                                ch_roles = ch_info[2]
+                                channel = discord.utils.get(category.channels, name=ch_name)
+
+                                if channel is None:
+                                    # Bangun overwrites untuk channel
+                                    channel_overwrites = {
+                                        guild.default_role: discord.PermissionOverwrite(read_messages=False)
+                                    }
+                                    # Beri izin berdasarkan allowed roles kategori
+                                    for role_name in allowed_roles:
+                                        role = discord.utils.get(guild.roles, name=role_name.replace("@", ""))
+                                        if role:
+                                            channel_overwrites[role] = discord.PermissionOverwrite(read_messages=True)
+
+                                    # Modifikasi izin spesifik channel
+                                    for role_name in ch_roles:
+                                        if role_name == "@everyone":
+                                            channel_overwrites[guild.default_role] = discord.PermissionOverwrite(read_messages=True)
+                                        else:
+                                            role = discord.utils.get(guild.roles, name=role_name.replace("@", ""))
+                                            if role:
+                                                if ch_name in CHANNEL_PERMISSIONS:
+                                                    if role_name in CHANNEL_PERMISSIONS[ch_name]:
+                                                        perm_overwrite = discord.PermissionOverwrite()
+                                                        for perm, value in CHANNEL_PERMISSIONS[ch_name][role_name].items():
+                                                            setattr(perm_overwrite, perm, value)
+                                                        channel_overwrites[role] = perm_overwrite
+
+                                    ch_type = ch_info[3] if len(ch_info) > 3 else "text"
+                                    if ch_type == "voice":
+                                        await category.create_voice_channel(ch_name, overwrites=channel_overwrites)
+                                    elif ch_type == "stage":
+                                        await category.create_stage_channel(ch_name, overwrites=channel_overwrites)
+                                    else:
+                                        await category.create_text_channel(ch_name, topic=desc, overwrites=channel_overwrites)
+                                    print(f"[AutoFix] Channel '{ch_name}' ({ch_type}) dibuat di kategori '{cat_name}' dengan pengamanan izin.")
+                            except Exception as ch_err:
+                                logging.error(f"[CategoryMaintainer] Error checking/creating channel in category '{cat_name}': {ch_err}")
+                    except Exception as cat_err:
+                        logging.error(f"[CategoryMaintainer] Error checking/creating category: {cat_err}")
+        except Exception as global_err:
+            logging.error(f"[CategoryMaintainer] Critical global error in ensure_categories loop: {global_err}")
 
     @ensure_categories.before_loop
     async def before_ensure_categories(self):
