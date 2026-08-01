@@ -3457,9 +3457,11 @@ async def send_premium_sukses_embed(user, channel, expired_date):
             f"▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n"
             f"✇ Terima kasih {user.mention} telah berlangganan **Wizard Member MountAlgo**!\n\n"
             "➮ Akses premium telah aktif. Nikmati fitur eksklusif:\n"
-            "‣ Wizard Toolkits: Alat Serbaguna\n"
-            "‣ Wizard Analisis: Analisis Dari aset crypto forex dan komoditas yang mendalam \n"
-            "‣ Wizard Setrategi : Strategi khusus yang dipacking sebaik mungkin untuk Strategi perdagangan di pasar crypto forex dan komoditas\n\n"
+            "‣ **Wizard Toolkits**: Kalkulator & analisis risiko trading presisi harian.\n"
+            "‣ **Wizard Analisis**: Analisis teknikal/fundamental mendalam untuk Crypto, Forex & Emas.\n"
+            "‣ **Wizard Strategi**: Strategi trading siap pakai yang dipacking profesional.\n"
+            "‣ **Relaxation Arcade**: Mini-game interaktif (Slot, RPS, Dadu, Koin, Math) di `#relaxation-games`.\n"
+            "‣ **Music & Videos**: Playlist lo-fi, synthwave & ambient focus di `#music-videos`.\n\n"
             f"▹ Langganan aktif hingga: **{format_wib(expired_wib)}**\n"
             f"▰▰▰▰▰▰▰▰▰▰▰▰▰▰"
         ),
@@ -3471,9 +3473,11 @@ async def send_premium_sukses_embed(user, channel, expired_date):
     embed.add_field(
         name="⬈ KEUNTUNGAN Wizard Member",
         value=(
-            "▹ Prioritas konsultasi\n"
-            "▹ Akses tools trading canggih\n"
-            "▹ Event & giveaway khusus"
+            "▹ Sinyal premium harian dengan tingkat akurasi tinggi\n"
+            "▹ Akses penuh alat bantu trading canggih multi-sumber\n"
+            "▹ Ruang diskusi premium bebas spam & interaktif\n"
+            "▹ Prioritas konsultasi personal langsung dengan Admin\n"
+            "▹ Game santai pengusir stres setelah trading"
         ),
         inline=False
     )
@@ -3659,34 +3663,45 @@ def send_faq_embed():
         inline=False
     )
     
-    # Section 4: Features
+    # Section 4: Free Membership Features (Member Biasa)
     embed.add_field(
-        name="▸ 04. FITUR UTAMA",
+        name="▸ 04. FITUR MEMBER BIASA (FREE TIER)",
         value=(
-            "‣ Edukasi trading multi-level\n"
-            "‣ Tools strategi khusus (WizardMember)\n"
-            "‣ Wizard Toolkits: Alat Serbaguna\n"
-            "‣ Wizard Analisis: Analisis Dari aset crypto forex dan komoditas yang mendalam \n"
-            "‣ Wizard Setrategi : Strategi khusus yang dipacking sebaik mungkin untuk Strategi perdagangan di pasar crypto forex dan komoditas\n\n"
-            "‣ Sistem moderasi canggih\n"
+            "```diff\n"
+            "+ 📢 #pengumuman: Akses informasi, berita, dan pengumuman resmi server.\n"
+            "+ 📰 #all-news: Berita finansial global & update pasar real-time.\n"
+            "+ 💬 #lounge-chat: Ruang diskusi umum & obrolan santai antar member.\n"
+            "+ 🗺️ #roadmap_trader: Alur perjalanan terstruktur karir seorang trader.\n"
+            "+ 📚 #akademi: Gudang materi edukasi & dasar-dasar trading multi-level.\n"
+            "+ ⚙️ #free-indikator: Akses gratis indikator buatan tim MountAlgo.\n"
+            "+ 📈 #share-your-profits: Ruang berbagi profit trading & jurnal Anda.\n"
+            "+ 🔊 #member-voice & #member-stage: Ruang obrolan suara & panggung event.\n"
+            "```\n"
             "▰▰▰▰▰▰▰▰▰▰▰▰▰▰"
         ),
         inline=False
     )
     
-    # Section 5: Premium Membership
+    # Section 5: Premium Membership Features (Wizard Member)
     embed.add_field(
-        name="▸ 05. Wizard Member (PREMIUM)",
+        name="▸ 05. FITUR WIZARD MEMBER (PREMIUM TIER)",
         value=(
-            "➤ Cara berlangganan:\n"
-            "① Klik tombol di #verifikasi\n"
-            "② Pilih paket langganan\n"
-            "③ Lakukan pembayaran (DANA/QRIS) / gunakan Cryptocurency (USDT/ BTC).\n"
-            "④ Setelah pembayaran, lakukan verifikasi di kanal #bantuan\n"
-            "➤ Fitur eksklusif:\n"
-            "‣ Sinyal premium dengan analisis mendalam\n"
-            "‣ Tools trading canggih\n"
-            "‣ Prioritas konsultasi\n"
+            "```diff\n"
+            "+ 💎 #wizard-lounge-chat: Diskusi eksklusif & konsultasi premium bebas spam.\n"
+            "+ 🛠️ #wizard-toolkits: Alat bantu canggih & Kalkulator Risiko Trading presisi.\n"
+            "+ 📐 #wizard-strategy: Strategi trading premium yang dipacking siap pakai (SMC, dll).\n"
+            "+ 🪙 #wizard-crypto: Analisis harian premium mendalam untuk aset Crypto.\n"
+            "+ 💱 #wizard-forex: Analisis harian premium mendalam untuk pasangan Forex.\n"
+            "+ 🔱 #wizard-gold: Analisis harian premium mendalam untuk Emas & Komoditas.\n"
+            "+ 🎮 #relaxation-games: Arcade privat dengan 6 game seru (Slot, RPS, Dadu, Koin, Math, dll).\n"
+            "+ 🎵 #music-videos: Playlist kurasi khusus (Lo-Fi, Synthwave, Meditation) untuk fokus.\n"
+            "+ 🔊 #wizard-voice & #wizard-stage: Live analisis, webinar privat & voice eksklusif.\n"
+            "```\n"
+            "➤ **Cara Berlangganan:**\n"
+            "① Klik tombol **Langganan Premium** di `#verifikasi`\n"
+            "② Pilih paket langganan Anda (Bulanan / Tahunan)\n"
+            "③ Bayar via DANA, USDC (Crypto - Base/Solana), atau Bank/Kartu Transfer\n"
+            "④ Kirim bukti transfer di `#bantuan` ke Admin untuk aktivasi kilat!\n"
             "▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰"
         ),
         inline=False
@@ -4428,7 +4443,6 @@ async def send_analysis_embed(
 # --- Pilihan Pembayaran ---
 class PaymentSelect(discord.ui.Select):
     def __init__(self):
-        global PAYMENT_DANA_ACTIVE, PAYMENT_CRYPTO_ACTIVE, PAYMENT_CARD_ACTIVE
         options = []
         if PAYMENT_DANA_ACTIVE:
             options.append(discord.SelectOption(
@@ -4583,7 +4597,6 @@ class PaymentSelect(discord.ui.Select):
 class VerifView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
-        global DONATION_ACTIVE
         if not DONATION_ACTIVE:
             for child in self.children.copy():
                 if child.custom_id == "verif_donation":
