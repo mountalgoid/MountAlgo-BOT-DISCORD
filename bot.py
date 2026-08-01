@@ -5895,7 +5895,7 @@ class WizardChannelSelectView(discord.ui.View):
 
 class AdminControlSelectorView(discord.ui.View):
     def __init__(self):
-        super().__init__(timeout=60)
+        super().__init__(timeout=None)
 
     @discord.ui.button(
         label="➮ Promosi / Degradasi Admin",
