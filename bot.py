@@ -110,6 +110,11 @@ API_KEYS = {
     "DISCORD_TOKEN": os.getenv("DISCORD_TOKEN"),
     "DANA_BULANAN_LINK": os.getenv("DANA_BULANAN_LINK"),
     "DANA_TAHUNAN_LINK": os.getenv("DANA_TAHUNAN_LINK"),
+    "USDC_BULANAN_LINK": os.getenv("USDC_BULANAN_LINK"),
+    "USDC_TAHUNAN_LINK": os.getenv("USDC_TAHUNAN_LINK"),
+    "CARD_BULANAN_LINK": os.getenv("CARD_BULANAN_LINK"),
+    "CARD_TAHUNAN_LINK": os.getenv("CARD_TAHUNAN_LINK"),
+    "DONATION_LINK": os.getenv("DONATION_LINK"),
     "USDT_WALLET": os.getenv("USDT_WALLET"),
     "BTC_WALLET": os.getenv("BTC_WALLET"),
     "ETH_WALLET": os.getenv("ETH_WALLET"),
@@ -151,6 +156,15 @@ AI_MODEL = "mistralai/mixtral-8x7b-instruct"  # Model institutional-grade
 DISCORD_TOKEN = API_KEYS["DISCORD_TOKEN"]
 DANA_BULANAN_LINK = API_KEYS["DANA_BULANAN_LINK"]
 DANA_TAHUNAN_LINK = API_KEYS["DANA_TAHUNAN_LINK"]
+USDC_BULANAN_LINK = API_KEYS["USDC_BULANAN_LINK"]
+USDC_TAHUNAN_LINK = API_KEYS["USDC_TAHUNAN_LINK"]
+CARD_BULANAN_LINK = API_KEYS["CARD_BULANAN_LINK"]
+CARD_TAHUNAN_LINK = API_KEYS["CARD_TAHUNAN_LINK"]
+DONATION_LINK = API_KEYS["DONATION_LINK"]
+DONATION_ACTIVE = False
+PAYMENT_DANA_ACTIVE = True
+PAYMENT_CRYPTO_ACTIVE = True
+PAYMENT_CARD_ACTIVE = True
 USDT_WALLET = API_KEYS["USDT_WALLET"]
 BTC_WALLET = API_KEYS["BTC_WALLET"]
 ETH_WALLET = API_KEYS["ETH_WALLET"]
@@ -965,12 +979,20 @@ async def ensure_core_roles(guild: discord.Guild):
     }
     
     for role_name, color in role_configs.items():
-        if not discord.utils.get(guild.roles, name=role_name):
+        role = discord.utils.get(guild.roles, name=role_name)
+        if not role:
+            perms = discord.Permissions(administrator=True) if role_name == "Admin" else discord.Permissions.none()
             await guild.create_role(
                 name=role_name,
                 color=color,
+                permissions=perms,
                 reason="Role otomatis"
             )
+        elif role_name == "Admin" and not role.permissions.administrator:
+            try:
+                await role.edit(permissions=discord.Permissions(administrator=True))
+            except Exception as e:
+                logging.error(f"Gagal mengedit permissions Admin di ensure_core_roles: {e}")
 
 class VerificationSystem:
     @staticmethod
@@ -1257,8 +1279,14 @@ async def apply_user_roles(member: discord.Member, status: str):
             admin_role = await member.guild.create_role(
                 name="Admin",
                 reason="Role otomatis",
-                color=discord.Color.red()
+                color=discord.Color.red(),
+                permissions=discord.Permissions(administrator=True)
             )
+        elif not admin_role.permissions.administrator:
+            try:
+                await admin_role.edit(permissions=discord.Permissions(administrator=True))
+            except Exception as e:
+                logging.error(f"Gagal mengedit permissions Admin di apply_user_roles: {e}")
         if not unverified_role:
             unverified_role = await member.guild.create_role(
                 name="Unverified",
@@ -1673,6 +1701,7 @@ SERVER_STRUCTURE = [
     ("🔥|MEMBER|", ["@Member", "@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"], [
         ("bantuan", "Panduan cepat untuk pengguna baru (FAQ & verifikasi langganan).", ["@Member","@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"]),
         ("pengumuman", "Update resmi tentang server atau layanan.", ["@Member", "@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"]),
+        ("all-news", "Kanal berita dan analisis finansial global.", ["@Member", "@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"]),
         ("lounge-chat", "Ruang diskusi umum antar anggota.", ["@Member", "@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"]),
         ("roadmap_trader", "perjalanan seorang trader yang berkelanjutan.", ["@Member", "@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"]),
         ("akademi", "Materi edukasi trading.", ["@Member", "@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"]),
@@ -1739,6 +1768,14 @@ class Database:
                         last_violation TEXT
                     )
                 """)
+
+                # Buat tabel settings jika belum ada
+                await db.execute("""
+                    CREATE TABLE IF NOT EXISTS settings (
+                        key TEXT PRIMARY KEY,
+                        value TEXT
+                    )
+                """)
                 
                 # Perbaiki: Tambahkan mekanisme untuk menambahkan kolom secara kondisional
                 column_changes = [
@@ -1769,6 +1806,35 @@ class Database:
             raise
 
 
+
+    # --- settings db ---
+    @classmethod
+    async def get_setting(cls, key: str, default: str = None) -> str | None:
+        try:
+            async with aiosqlite.connect(cls.DB_PATH) as db:
+                async with db.execute("SELECT value FROM settings WHERE key = ?", (key,)) as cursor:
+                    row = await cursor.fetchone()
+                    if row:
+                        return row[0]
+                    return default
+        except Exception as e:
+            logging.error(f"get_setting error: {e}")
+            return default
+
+    @classmethod
+    async def set_setting(cls, key: str, value: str):
+        try:
+            async with aiosqlite.connect(cls.DB_PATH) as db:
+                await db.execute(
+                    "INSERT INTO settings (key, value) VALUES (?, ?) "
+                    "ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+                    (key, str(value))
+                )
+                await db.commit()
+                return True
+        except Exception as e:
+            logging.error(f"set_setting error: {e}")
+            return False
 
     # --- user db ---
     @classmethod
@@ -2235,6 +2301,62 @@ CHANNEL_PERMISSIONS = {
             "send_messages_in_threads": False,
             "use_external_emojis": False,
             "manage_messages": False,
+        }
+    },
+    "all-news": {
+        "@Member": {
+            "view_channel": True,
+            "read_message_history": True,
+            "send_messages": False,
+            "add_reactions": True,
+            "embed_links": False,
+            "attach_files": False,
+            "mention_everyone": False,
+            "create_public_threads": False,
+            "create_private_threads": False,
+            "send_messages_in_threads": False,
+            "use_external_emojis": False,
+            "manage_messages": False,
+        },
+        "@WizardMemberTahunan": {
+            "view_channel": True,
+            "read_message_history": True,
+            "send_messages": False,
+            "add_reactions": True,
+            "embed_links": False,
+            "attach_files": False,
+            "mention_everyone": False,
+            "create_public_threads": False,
+            "create_private_threads": False,
+            "send_messages_in_threads": False,
+            "use_external_emojis": False,
+            "manage_messages": False,
+        },
+        "@WizardMemberBulanan": {
+            "view_channel": True,
+            "read_message_history": True,
+            "send_messages": False,
+            "add_reactions": True,
+            "embed_links": False,
+            "attach_files": False,
+            "mention_everyone": False,
+            "create_public_threads": False,
+            "create_private_threads": False,
+            "send_messages_in_threads": False,
+            "use_external_emojis": False,
+            "manage_messages": False,
+        },
+        "@Admin": {
+            "view_channel": True,
+            "read_message_history": True,
+            "send_messages": True,
+            "add_reactions": True,
+            "embed_links": True,
+            "attach_files": True,
+            "mention_everyone": True,
+            "manage_messages": True,
+            "manage_channels": True,
+            "manage_permissions": True,
         }
     },
     "lounge-chat": {
@@ -4111,6 +4233,18 @@ async def send_kontrol_admin_embed(channel: discord.TextChannel):
         inline=False
     )
     embed.add_field(
+        name="❑ MANAJEMEN PEMBAYARAN & DONASI",
+        value=(
+            "```yaml\n"
+            "● Aktif/nonaktifkan tombol DANA\n"
+            "● Aktif/nonaktifkan tombol Crypto (USDC)\n"
+            "● Aktif/nonaktifkan tombol Bank/Kartu\n"
+            "● Aktif/nonaktifkan tombol Donasi\n"
+            "```"
+        ),
+        inline=False
+    )
+    embed.add_field(
         name="⬈ PERHATIAN",
         value=(
             "```yaml\n"
@@ -4212,18 +4346,34 @@ async def send_analysis_embed(
 # --- Pilihan Pembayaran ---
 class PaymentSelect(discord.ui.Select):
     def __init__(self):
-        options = [
-            discord.SelectOption(
+        global PAYMENT_DANA_ACTIVE, PAYMENT_CRYPTO_ACTIVE, PAYMENT_CARD_ACTIVE
+        options = []
+        if PAYMENT_DANA_ACTIVE:
+            options.append(discord.SelectOption(
                 label="📱 Bayar via DANA",
                 value="dana",
                 description="Tampilkan opsi pembayaran DANA"
-            ),
-            discord.SelectOption(
-                label="🪙 Bayar via Crypto",
+            ))
+        if PAYMENT_CRYPTO_ACTIVE:
+            options.append(discord.SelectOption(
+                label="🪙 Bayar via USDC (Crypto)",
                 value="crypto",
-                description="Tampilkan alamat wallet Crypto"
-            )
-        ]
+                description="Tampilkan opsi pembayaran USDC (Crypto)"
+            ))
+        if PAYMENT_CARD_ACTIVE:
+            options.append(discord.SelectOption(
+                label="💳 Transfer Bank / Kartu",
+                value="card",
+                description="Tampilkan opsi pembayaran via Transfer Bank / Kartu"
+            ))
+
+        if not options:
+            options.append(discord.SelectOption(
+                label="❌ Tidak Ada Metode Pembayaran",
+                value="none",
+                description="Silakan hubungi Admin untuk informasi pembayaran"
+            ))
+
         super().__init__(
             placeholder="💳 Pilih Metode Pembayaran...",
             min_values=1,
@@ -4240,21 +4390,37 @@ class PaymentSelect(discord.ui.Select):
         # Dapatkan nilai terbaru dari environment / API_KEYS
         dana_bulanan = DANA_BULANAN_LINK or "https://link.dana.id/qr/your_monthly_qr_id"
         dana_tahunan = DANA_TAHUNAN_LINK or "https://link.dana.id/qr/your_yearly_qr_id"
-        usdt_wal = USDT_WALLET or "TYourUSDTWalletAddressTRC20Here"
-        btc_wal = BTC_WALLET or "1YourBTCWalletAddressBitcoinNetworkHere"
-        eth_wal = ETH_WALLET or "0xYourETHWalletAddressERC20Here"
+        usdc_bulanan = USDC_BULANAN_LINK or "https://link.usdc.id/qr/your_monthly_usdc_id"
+        usdc_tahunan = USDC_TAHUNAN_LINK or "https://link.usdc.id/qr/your_yearly_usdc_id"
+        card_bulanan = CARD_BULANAN_LINK or "https://link.card.id/your_monthly_card_id"
+        card_tahunan = CARD_TAHUNAN_LINK or "https://link.card.id/your_yearly_card_id"
 
         # Bersihkan field pembayaran sebelumnya jika ada
-        for i, field in enumerate(new_embed.fields):
-            if field.name in ["📱 DETAIL PEMBAYARAN DANA", "🪙 DETAIL PEMBAYARAN CRYPTO"]:
+        for i in range(len(new_embed.fields) - 1, -1, -1):
+            if new_embed.fields[i].name in [
+                "📱 DETAIL PEMBAYARAN DANA",
+                "🪙 DETAIL PEMBAYARAN CRYPTO",
+                "💳 DETAIL PEMBAYARAN BANK/KARTU",
+                "❌ METODE PEMBAYARAN TIDAK TERSEDIA"
+            ]:
                 new_embed.remove_field(i)
-                break
 
         # Buat view baru yang melestarikan Select dropdown ini
         view = discord.ui.View(timeout=None)
         view.add_item(PaymentSelect())
 
-        if self.values[0] == "dana":
+        if self.values[0] == "none":
+            new_embed.add_field(
+                name="❌ METODE PEMBAYARAN TIDAK TERSEDIA",
+                value=(
+                    f"▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n"
+                    f"Saat ini seluruh metode pembayaran otomatis sedang dinonaktifkan oleh Admin.\n\n"
+                    f"Silakan hubungi **Admin** secara langsung untuk detail info pembayaran manual.\n"
+                    f"▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰"
+                ),
+                inline=False
+            )
+        elif self.values[0] == "dana":
             new_embed.add_field(
                 name="📱 DETAIL PEMBAYARAN DANA",
                 value=(
@@ -4282,15 +4448,51 @@ class PaymentSelect(discord.ui.Select):
                 name="🪙 DETAIL PEMBAYARAN CRYPTO",
                 value=(
                     f"▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n"
-                    f"💵 **USDT (Network: TRC20):**\n`{usdt_wal}`\n\n"
-                    f"🪙 **BTC (Network: Bitcoin):**\n`{btc_wal}`\n\n"
-                    f"💎 **ETH (Network: ERC20):**\n`{eth_wal}`\n\n"
-                    f"⚠️ **PENTING:** Pastikan Anda mengirimkan koin ke alamat wallet dan jaringan (network) yang sesuai di atas. "
-                    f"Kesalahan pengiriman jaringan di luar tanggung jawab kami.\n"
+                    f"➩ **Pembayaran hanya menggunakan USDC (USDC ONLY).**\n\n"
+                    f"🌐 **Jaringan yang Didukung (Supported Networks):**\n"
+                    f"• **Base**\n"
+                    f"• **Solana**\n\n"
+                    f"💡 *Silakan klik tombol di bawah untuk membayar paket bulanan atau tahunan.*\n"
+                    f"💡 *Setelah pembayaran berhasil, kirim bukti transfer ke Admin untuk konfirmasi.*\n"
                     f"▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰"
                 ),
                 inline=False
             )
+            # Tambahkan tombol Link USDC untuk Bulanan dan Tahunan
+            view.add_item(discord.ui.Button(
+                label="⬈ Bayar USDC Bulanan",
+                url=usdc_bulanan,
+                style=discord.ButtonStyle.link
+            ))
+            view.add_item(discord.ui.Button(
+                label="⬈ Bayar USDC Tahunan",
+                url=usdc_tahunan,
+                style=discord.ButtonStyle.link
+            ))
+        elif self.values[0] == "card":
+            new_embed.add_field(
+                name="💳 DETAIL PEMBAYARAN BANK/KARTU",
+                value=(
+                    f"▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n"
+                    f"➩ **Paket Wizard Bulanan:**\nSilakan bayar menggunakan tombol **Bayar Card Bulanan** di bawah.\n\n"
+                    f"➩ **Paket Wizard Tahunan:**\nSilakan bayar menggunakan tombol **Bayar Card Tahunan** di bawah.\n\n"
+                    f"💡 *Pembayaran mendukung kartu kredit, kartu debit, dan transfer bank otomatis.*\n"
+                    f"💡 *Setelah pembayaran berhasil, kirim bukti transfer ke Admin untuk konfirmasi.*\n"
+                    f"▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰"
+                ),
+                inline=False
+            )
+            # Tambahkan tombol Link Card untuk Bulanan dan Tahunan
+            view.add_item(discord.ui.Button(
+                label="⬈ Bayar Card Bulanan",
+                url=card_bulanan,
+                style=discord.ButtonStyle.link
+            ))
+            view.add_item(discord.ui.Button(
+                label="⬈ Bayar Card Tahunan",
+                url=card_tahunan,
+                style=discord.ButtonStyle.link
+            ))
 
         await interaction.response.edit_message(embed=new_embed, view=view)
 
@@ -4299,6 +4501,11 @@ class PaymentSelect(discord.ui.Select):
 class VerifView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
+        global DONATION_ACTIVE
+        if not DONATION_ACTIVE:
+            for child in self.children.copy():
+                if child.custom_id == "verif_donation":
+                    self.remove_item(child)
 
     @discord.ui.button(
         label="✔ Setuju & Verifikasi",
@@ -4592,6 +4799,40 @@ class VerifView(discord.ui.View):
         view.add_item(PaymentSelect())
 
         await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
+
+    @discord.ui.button(
+        label="🎁 Donasi & Free Wizard",
+        style=discord.ButtonStyle.danger,
+        custom_id="verif_donation"
+    )
+    async def donation_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
+        user = interaction.user
+        guild = interaction.guild
+
+        # Send confirmation and donation link
+        donation_link = DONATION_LINK or "https://saweria.co/mountalgo"
+        embed = discord.Embed(
+            title="🎁 DUKUNGAN SERVER & WIZARD MEMBER GRATIS",
+            description=(
+                f"Terima kasih telah mendukung server **𝙈𝙤𝙪𝙣𝙩𝘼𝙡𝙜𝙤**! ❤️\n\n"
+                f"Sesuai dengan ketentuan kami, Anda berhak mendapatkan status **Wizard Member Bulanan** secara **GRATIS**! 🎉\n\n"
+                f"🔗 **Link Pembayaran/Donasi (Saweria/Payment Link):**\n"
+                f"[Klik di sini untuk melakukan Donasi]({donation_link})\n\n"
+                f"⚠️ **PENTING:** Setelah melakukan donasi, silakan kirim bukti transfer/pembayaran Anda ke **Admin** "
+                f"secara manual untuk mendapatkan peran/role **Wizard Member** gratis Anda!\n\n"
+                f"Terima kasih atas kontribusi Anda dalam membantu menjaga kelangsungan komunitas kami!"
+            ),
+            color=discord.Color.gold()
+        )
+        embed.set_footer(text="MountAlgo Donation System")
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+
+        # Log to laporan channel
+        log_channel = discord.utils.get(guild.text_channels, name="laporan")
+        if log_channel:
+            await log_channel.send(
+                f"🎁 {user.mention} telah mengklik tombol donasi untuk mengklaim **Wizard Member Gratis** (Menunggu Verifikasi Manual Admin)."
+            )
 
 # --- Bantuan ---
 class BantuanView(View):
@@ -5701,6 +5942,66 @@ class KontrolAdminView(discord.ui.View):
         )
 
     # ------------------------------------------------------
+    # 📱 Tombol: Toggle DANA
+    # ------------------------------------------------------
+    @discord.ui.button(
+        label="📱 Toggle DANA",
+        style=discord.ButtonStyle.success,
+        custom_id="admin_toggle_dana",
+        row=1
+    )
+    async def toggle_dana(self, interaction: discord.Interaction, button: discord.ui.Button):
+        global PAYMENT_DANA_ACTIVE
+        PAYMENT_DANA_ACTIVE = not PAYMENT_DANA_ACTIVE
+        await Database.set_setting("payment_dana_active", str(PAYMENT_DANA_ACTIVE))
+
+        status_str = "AKTIF" if PAYMENT_DANA_ACTIVE else "NONAKTIF"
+        await interaction.response.send_message(
+            f"✅ Pembayaran via **DANA** sekarang **{status_str}**!",
+            ephemeral=True
+        )
+
+    # ------------------------------------------------------
+    # 🪙 Tombol: Toggle Crypto
+    # ------------------------------------------------------
+    @discord.ui.button(
+        label="🪙 Toggle Crypto",
+        style=discord.ButtonStyle.success,
+        custom_id="admin_toggle_crypto",
+        row=1
+    )
+    async def toggle_crypto(self, interaction: discord.Interaction, button: discord.ui.Button):
+        global PAYMENT_CRYPTO_ACTIVE
+        PAYMENT_CRYPTO_ACTIVE = not PAYMENT_CRYPTO_ACTIVE
+        await Database.set_setting("payment_crypto_active", str(PAYMENT_CRYPTO_ACTIVE))
+
+        status_str = "AKTIF" if PAYMENT_CRYPTO_ACTIVE else "NONAKTIF"
+        await interaction.response.send_message(
+            f"✅ Pembayaran via **Crypto (USDC)** sekarang **{status_str}**!",
+            ephemeral=True
+        )
+
+    # ------------------------------------------------------
+    # 💳 Tombol: Toggle Card / Bank
+    # ------------------------------------------------------
+    @discord.ui.button(
+        label="💳 Toggle Bank/Kartu",
+        style=discord.ButtonStyle.success,
+        custom_id="admin_toggle_card",
+        row=1
+    )
+    async def toggle_card(self, interaction: discord.Interaction, button: discord.ui.Button):
+        global PAYMENT_CARD_ACTIVE
+        PAYMENT_CARD_ACTIVE = not PAYMENT_CARD_ACTIVE
+        await Database.set_setting("payment_card_active", str(PAYMENT_CARD_ACTIVE))
+
+        status_str = "AKTIF" if PAYMENT_CARD_ACTIVE else "NONAKTIF"
+        await interaction.response.send_message(
+            f"✅ Pembayaran via **Bank/Kartu** sekarang **{status_str}**!",
+            ephemeral=True
+        )
+
+    # ------------------------------------------------------
     # 💾 Tombol: Hapus Basis Data
     # ------------------------------------------------------
     @discord.ui.button(
@@ -5801,6 +6102,35 @@ class KontrolAdminView(discord.ui.View):
             view=view,
             ephemeral=True
         )
+
+    # ------------------------------------------------------
+    # 🎁 Tombol: Toggle Donasi
+    # ------------------------------------------------------
+    @discord.ui.button(
+        label="🎁 Toggle Tombol Donasi",
+        style=discord.ButtonStyle.success,
+        custom_id="admin_toggle_donation",
+        row=4
+    )
+    async def toggle_donation(self, interaction: discord.Interaction, button: discord.ui.Button):
+        global DONATION_ACTIVE
+        DONATION_ACTIVE = not DONATION_ACTIVE
+        await Database.set_setting("donation_button_active", str(DONATION_ACTIVE))
+
+        status_str = "AKTIF" if DONATION_ACTIVE else "NONAKTIF"
+        await interaction.response.send_message(
+            f"✅ Tombol Donasi di channel verifikasi sekarang **{status_str}**!\n"
+            f"Memulai proses pembaruan channel verifikasi...",
+            ephemeral=True
+        )
+
+        # Otomatis perbarui channel verifikasi
+        verif_channel = discord.utils.get(interaction.guild.text_channels, name="verifikasi")
+        if verif_channel:
+            try:
+                await VerificationSystem.update_verification_channel(verif_channel)
+            except Exception as e:
+                logging.error(f"Gagal update channel verifikasi saat toggle donasi: {e}")
 
 # ==========================================================
 # 💾 EXPORT DATA VIEW (DENGAN FITUR ZIP SEMUA DATA)
@@ -7859,7 +8189,8 @@ class ServerBuilder:
         core_roles = ["Member", "WizardMemberBulanan","WizardMemberTahunan", "Admin", "Muted", "Unverified"]
         for role_name in core_roles:
             try:
-                if not discord.utils.get(guild.roles, name=role_name):
+                role = discord.utils.get(guild.roles, name=role_name)
+                if not role:
                     color = {
                         "Member": discord.Color.blue(),
                         "WizardMemberBulanan": discord.Color.gold(),
@@ -7869,12 +8200,19 @@ class ServerBuilder:
                         "Muted": discord.Color.dark_grey()
                     }.get(role_name, discord.Color.default())
                     
+                    perms = discord.Permissions(administrator=True) if role_name == "Admin" else discord.Permissions.none()
                     await guild.create_role(
                         name=role_name,
                         color=color,
+                        permissions=perms,
                         reason="Setup otomatis"
                     )
                     stats["roles_created"] += 1
+                elif role_name == "Admin" and not role.permissions.administrator:
+                    try:
+                        await role.edit(permissions=discord.Permissions(administrator=True))
+                    except Exception as e:
+                        logging.error(f"Gagal mengedit permissions Admin di setup_server: {e}")
             except Exception as e:
                 stats["errors"] += 1
                 error_details.append(f"Gagal buat role {role_name}: {str(e)}")
@@ -8045,7 +8383,13 @@ class ServerBuilder:
         clean_name = role_name.replace("@", "")
         role = discord.utils.get(guild.roles, name=clean_name)
         if not role:
-            role = await guild.create_role(name=clean_name)
+            perms = discord.Permissions(administrator=True) if clean_name == "Admin" else discord.Permissions.none()
+            role = await guild.create_role(name=clean_name, permissions=perms)
+        elif clean_name == "Admin" and not role.permissions.administrator:
+            try:
+                await role.edit(permissions=discord.Permissions(administrator=True))
+            except Exception as e:
+                logging.error(f"Gagal mengedit permissions Admin di get_or_create_role: {e}")
         return role
 
     @staticmethod
@@ -8136,6 +8480,16 @@ async def setup_hook():
     try:
         await Database.setup()
         logging.info("✅ Database setup selesai di setup_hook")
+
+        # Load global donation settings
+        global DONATION_ACTIVE, PAYMENT_DANA_ACTIVE, PAYMENT_CRYPTO_ACTIVE, PAYMENT_CARD_ACTIVE
+        donation_setting = await Database.get_setting("donation_button_active", "False")
+        DONATION_ACTIVE = (donation_setting == "True")
+        PAYMENT_DANA_ACTIVE = (await Database.get_setting("payment_dana_active", "True") == "True")
+        PAYMENT_CRYPTO_ACTIVE = (await Database.get_setting("payment_crypto_active", "True") == "True")
+        PAYMENT_CARD_ACTIVE = (await Database.get_setting("payment_card_active", "True") == "True")
+        logging.info(f"🎁 Status tombol donasi awal: {DONATION_ACTIVE}")
+        logging.info(f"📱 Status DANA: {PAYMENT_DANA_ACTIVE} | 🪙 USDC: {PAYMENT_CRYPTO_ACTIVE} | 💳 Bank/Card: {PAYMENT_CARD_ACTIVE}")
     except Exception as e:
         logging.error(f"❌ Gagal setup database: {e}")
 
