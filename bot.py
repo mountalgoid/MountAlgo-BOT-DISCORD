@@ -162,6 +162,9 @@ CARD_BULANAN_LINK = API_KEYS["CARD_BULANAN_LINK"]
 CARD_TAHUNAN_LINK = API_KEYS["CARD_TAHUNAN_LINK"]
 DONATION_LINK = API_KEYS["DONATION_LINK"]
 DONATION_ACTIVE = False
+PAYMENT_DANA_ACTIVE = True
+PAYMENT_CRYPTO_ACTIVE = True
+PAYMENT_CARD_ACTIVE = True
 USDT_WALLET = API_KEYS["USDT_WALLET"]
 BTC_WALLET = API_KEYS["BTC_WALLET"]
 ETH_WALLET = API_KEYS["ETH_WALLET"]
@@ -4260,23 +4263,34 @@ async def send_analysis_embed(
 # --- Pilihan Pembayaran ---
 class PaymentSelect(discord.ui.Select):
     def __init__(self):
-        options = [
-            discord.SelectOption(
+        global PAYMENT_DANA_ACTIVE, PAYMENT_CRYPTO_ACTIVE, PAYMENT_CARD_ACTIVE
+        options = []
+        if PAYMENT_DANA_ACTIVE:
+            options.append(discord.SelectOption(
                 label="📱 Bayar via DANA",
                 value="dana",
                 description="Tampilkan opsi pembayaran DANA"
-            ),
-            discord.SelectOption(
+            ))
+        if PAYMENT_CRYPTO_ACTIVE:
+            options.append(discord.SelectOption(
                 label="🪙 Bayar via USDC (Crypto)",
                 value="crypto",
                 description="Tampilkan opsi pembayaran USDC (Crypto)"
-            ),
-            discord.SelectOption(
+            ))
+        if PAYMENT_CARD_ACTIVE:
+            options.append(discord.SelectOption(
                 label="💳 Transfer Bank / Kartu",
                 value="card",
                 description="Tampilkan opsi pembayaran via Transfer Bank / Kartu"
-            )
-        ]
+            ))
+
+        if not options:
+            options.append(discord.SelectOption(
+                label="❌ Tidak Ada Metode Pembayaran",
+                value="none",
+                description="Silakan hubungi Admin untuk informasi pembayaran"
+            ))
+
         super().__init__(
             placeholder="💳 Pilih Metode Pembayaran...",
             min_values=1,
@@ -4303,7 +4317,8 @@ class PaymentSelect(discord.ui.Select):
             if new_embed.fields[i].name in [
                 "📱 DETAIL PEMBAYARAN DANA",
                 "🪙 DETAIL PEMBAYARAN CRYPTO",
-                "💳 DETAIL PEMBAYARAN BANK/KARTU"
+                "💳 DETAIL PEMBAYARAN BANK/KARTU",
+                "❌ METODE PEMBAYARAN TIDAK TERSEDIA"
             ]:
                 new_embed.remove_field(i)
 
@@ -4311,7 +4326,18 @@ class PaymentSelect(discord.ui.Select):
         view = discord.ui.View(timeout=None)
         view.add_item(PaymentSelect())
 
-        if self.values[0] == "dana":
+        if self.values[0] == "none":
+            new_embed.add_field(
+                name="❌ METODE PEMBAYARAN TIDAK TERSEDIA",
+                value=(
+                    f"▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n"
+                    f"Saat ini seluruh metode pembayaran otomatis sedang dinonaktifkan oleh Admin.\n\n"
+                    f"Silakan hubungi **Admin** secara langsung untuk detail info pembayaran manual.\n"
+                    f"▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰"
+                ),
+                inline=False
+            )
+        elif self.values[0] == "dana":
             new_embed.add_field(
                 name="📱 DETAIL PEMBAYARAN DANA",
                 value=(
@@ -5829,6 +5855,66 @@ class KontrolAdminView(discord.ui.View):
         await interaction.response.send_message(
             "⚠️ Apakah kamu yakin ingin menghapus thread **obrolan & perkenalan** yang sudah tidak aktif?",
             view=view,
+            ephemeral=True
+        )
+
+    # ------------------------------------------------------
+    # 📱 Tombol: Toggle DANA
+    # ------------------------------------------------------
+    @discord.ui.button(
+        label="📱 Toggle DANA",
+        style=discord.ButtonStyle.success,
+        custom_id="admin_toggle_dana",
+        row=1
+    )
+    async def toggle_dana(self, interaction: discord.Interaction, button: discord.ui.Button):
+        global PAYMENT_DANA_ACTIVE
+        PAYMENT_DANA_ACTIVE = not PAYMENT_DANA_ACTIVE
+        await Database.set_setting("payment_dana_active", str(PAYMENT_DANA_ACTIVE))
+
+        status_str = "AKTIF" if PAYMENT_DANA_ACTIVE else "NONAKTIF"
+        await interaction.response.send_message(
+            f"✅ Pembayaran via **DANA** sekarang **{status_str}**!",
+            ephemeral=True
+        )
+
+    # ------------------------------------------------------
+    # 🪙 Tombol: Toggle Crypto
+    # ------------------------------------------------------
+    @discord.ui.button(
+        label="🪙 Toggle Crypto",
+        style=discord.ButtonStyle.success,
+        custom_id="admin_toggle_crypto",
+        row=1
+    )
+    async def toggle_crypto(self, interaction: discord.Interaction, button: discord.ui.Button):
+        global PAYMENT_CRYPTO_ACTIVE
+        PAYMENT_CRYPTO_ACTIVE = not PAYMENT_CRYPTO_ACTIVE
+        await Database.set_setting("payment_crypto_active", str(PAYMENT_CRYPTO_ACTIVE))
+
+        status_str = "AKTIF" if PAYMENT_CRYPTO_ACTIVE else "NONAKTIF"
+        await interaction.response.send_message(
+            f"✅ Pembayaran via **Crypto (USDC)** sekarang **{status_str}**!",
+            ephemeral=True
+        )
+
+    # ------------------------------------------------------
+    # 💳 Tombol: Toggle Card / Bank
+    # ------------------------------------------------------
+    @discord.ui.button(
+        label="💳 Toggle Bank/Kartu",
+        style=discord.ButtonStyle.success,
+        custom_id="admin_toggle_card",
+        row=1
+    )
+    async def toggle_card(self, interaction: discord.Interaction, button: discord.ui.Button):
+        global PAYMENT_CARD_ACTIVE
+        PAYMENT_CARD_ACTIVE = not PAYMENT_CARD_ACTIVE
+        await Database.set_setting("payment_card_active", str(PAYMENT_CARD_ACTIVE))
+
+        status_str = "AKTIF" if PAYMENT_CARD_ACTIVE else "NONAKTIF"
+        await interaction.response.send_message(
+            f"✅ Pembayaran via **Bank/Kartu** sekarang **{status_str}**!",
             ephemeral=True
         )
 
@@ -8299,10 +8385,14 @@ async def setup_hook():
         logging.info("✅ Database setup selesai di setup_hook")
 
         # Load global donation settings
-        global DONATION_ACTIVE
+        global DONATION_ACTIVE, PAYMENT_DANA_ACTIVE, PAYMENT_CRYPTO_ACTIVE, PAYMENT_CARD_ACTIVE
         donation_setting = await Database.get_setting("donation_button_active", "False")
         DONATION_ACTIVE = (donation_setting == "True")
+        PAYMENT_DANA_ACTIVE = (await Database.get_setting("payment_dana_active", "True") == "True")
+        PAYMENT_CRYPTO_ACTIVE = (await Database.get_setting("payment_crypto_active", "True") == "True")
+        PAYMENT_CARD_ACTIVE = (await Database.get_setting("payment_card_active", "True") == "True")
         logging.info(f"🎁 Status tombol donasi awal: {DONATION_ACTIVE}")
+        logging.info(f"📱 Status DANA: {PAYMENT_DANA_ACTIVE} | 🪙 USDC: {PAYMENT_CRYPTO_ACTIVE} | 💳 Bank/Card: {PAYMENT_CARD_ACTIVE}")
     except Exception as e:
         logging.error(f"❌ Gagal setup database: {e}")
 
