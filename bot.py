@@ -1717,6 +1717,8 @@ SERVER_STRUCTURE = [
         ("wizard-crypto", "Analisis harian aset Crypto premium.", ["@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"]),
         ("wizard-forex", "Analisis harian Forex premium.", ["@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"]),
         ("wizard-gold", "Analisis harian Emas & Komoditas premium.", ["@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"]),
+        ("relaxation-games", "Game santai untuk melepas penat setelah trading.", ["@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"]),
+        ("music-videos", "Musik & Video santai untuk relaksasi.", ["@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"]),
         ("wizard-voice", "Ruang obrolan suara eksklusif Wizard Member.", ["@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"], "voice"),
         ("wizard-stage", "Panggung live sesi analisis & edukasi premium.", ["@WizardMemberBulanan", "@WizardMemberTahunan", "@Admin"], "stage"),
     ]),
@@ -2941,6 +2943,86 @@ CHANNEL_PERMISSIONS = {
             "manage_permissions": True,
         }
     },
+    "relaxation-games": {
+        "@WizardMemberTahunan": {
+            "view_channel": True,
+            "read_message_history": True,
+            "send_messages": False,
+            "add_reactions": True,
+            "embed_links": False,
+            "attach_files": False,
+            "mention_everyone": False,
+            "create_public_threads": False,
+            "create_private_threads": False,
+            "send_messages_in_threads": False,
+            "use_external_emojis": False,
+            "manage_messages": False,
+        },
+        "@WizardMemberBulanan": {
+            "view_channel": True,
+            "read_message_history": True,
+            "send_messages": False,
+            "add_reactions": True,
+            "embed_links": False,
+            "attach_files": False,
+            "mention_everyone": False,
+            "create_public_threads": False,
+            "create_private_threads": False,
+            "send_messages_in_threads": False,
+            "use_external_emojis": False,
+            "manage_messages": False,
+        },
+        "@Admin": {
+            "view_channel": True,
+            "send_messages": True,
+            "add_reactions": True,
+            "embed_links": True,
+            "mention_everyone": True,
+            "manage_messages": True,
+            "manage_channels": True,
+            "manage_permissions": True,
+        }
+    },
+    "music-videos": {
+        "@WizardMemberTahunan": {
+            "view_channel": True,
+            "read_message_history": True,
+            "send_messages": False,
+            "add_reactions": True,
+            "embed_links": False,
+            "attach_files": False,
+            "mention_everyone": False,
+            "create_public_threads": False,
+            "create_private_threads": False,
+            "send_messages_in_threads": False,
+            "use_external_emojis": False,
+            "manage_messages": False,
+        },
+        "@WizardMemberBulanan": {
+            "view_channel": True,
+            "read_message_history": True,
+            "send_messages": False,
+            "add_reactions": True,
+            "embed_links": False,
+            "attach_files": False,
+            "mention_everyone": False,
+            "create_public_threads": False,
+            "create_private_threads": False,
+            "send_messages_in_threads": False,
+            "use_external_emojis": False,
+            "manage_messages": False,
+        },
+        "@Admin": {
+            "view_channel": True,
+            "send_messages": True,
+            "add_reactions": True,
+            "embed_links": True,
+            "mention_everyone": True,
+            "manage_messages": True,
+            "manage_channels": True,
+            "manage_permissions": True,
+        }
+    },
 }
 
 async def apply_channel_permissions(guild: discord.Guild):
@@ -3375,9 +3457,11 @@ async def send_premium_sukses_embed(user, channel, expired_date):
             f"▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n"
             f"✇ Terima kasih {user.mention} telah berlangganan **Wizard Member MountAlgo**!\n\n"
             "➮ Akses premium telah aktif. Nikmati fitur eksklusif:\n"
-            "‣ Wizard Toolkits: Alat Serbaguna\n"
-            "‣ Wizard Analisis: Analisis Dari aset crypto forex dan komoditas yang mendalam \n"
-            "‣ Wizard Setrategi : Strategi khusus yang dipacking sebaik mungkin untuk Strategi perdagangan di pasar crypto forex dan komoditas\n\n"
+            "‣ **Wizard Toolkits**: Kalkulator & analisis risiko trading presisi harian.\n"
+            "‣ **Wizard Analisis**: Analisis teknikal/fundamental mendalam untuk Crypto, Forex & Emas.\n"
+            "‣ **Wizard Strategi**: Strategi trading siap pakai yang dipacking profesional.\n"
+            "‣ **Relaxation Arcade**: Mini-game interaktif (Slot, RPS, Dadu, Koin, Math) di `#relaxation-games`.\n"
+            "‣ **Music & Videos**: Playlist lo-fi, synthwave & ambient focus di `#music-videos`.\n\n"
             f"▹ Langganan aktif hingga: **{format_wib(expired_wib)}**\n"
             f"▰▰▰▰▰▰▰▰▰▰▰▰▰▰"
         ),
@@ -3389,9 +3473,11 @@ async def send_premium_sukses_embed(user, channel, expired_date):
     embed.add_field(
         name="⬈ KEUNTUNGAN Wizard Member",
         value=(
-            "▹ Prioritas konsultasi\n"
-            "▹ Akses tools trading canggih\n"
-            "▹ Event & giveaway khusus"
+            "▹ Sinyal premium harian dengan tingkat akurasi tinggi\n"
+            "▹ Akses penuh alat bantu trading canggih multi-sumber\n"
+            "▹ Ruang diskusi premium bebas spam & interaktif\n"
+            "▹ Prioritas konsultasi personal langsung dengan Admin\n"
+            "▹ Game santai pengusir stres setelah trading"
         ),
         inline=False
     )
@@ -3577,34 +3663,45 @@ def send_faq_embed():
         inline=False
     )
     
-    # Section 4: Features
+    # Section 4: Free Membership Features (Member Biasa)
     embed.add_field(
-        name="▸ 04. FITUR UTAMA",
+        name="▸ 04. FITUR MEMBER BIASA (FREE TIER)",
         value=(
-            "‣ Edukasi trading multi-level\n"
-            "‣ Tools strategi khusus (WizardMember)\n"
-            "‣ Wizard Toolkits: Alat Serbaguna\n"
-            "‣ Wizard Analisis: Analisis Dari aset crypto forex dan komoditas yang mendalam \n"
-            "‣ Wizard Setrategi : Strategi khusus yang dipacking sebaik mungkin untuk Strategi perdagangan di pasar crypto forex dan komoditas\n\n"
-            "‣ Sistem moderasi canggih\n"
+            "```diff\n"
+            "+ 📢 #pengumuman: Akses informasi, berita, dan pengumuman resmi server.\n"
+            "+ 📰 #all-news: Berita finansial global & update pasar real-time.\n"
+            "+ 💬 #lounge-chat: Ruang diskusi umum & obrolan santai antar member.\n"
+            "+ 🗺️ #roadmap_trader: Alur perjalanan terstruktur karir seorang trader.\n"
+            "+ 📚 #akademi: Gudang materi edukasi & dasar-dasar trading multi-level.\n"
+            "+ ⚙️ #free-indikator: Akses gratis indikator buatan tim MountAlgo.\n"
+            "+ 📈 #share-your-profits: Ruang berbagi profit trading & jurnal Anda.\n"
+            "+ 🔊 #member-voice & #member-stage: Ruang obrolan suara & panggung event.\n"
+            "```\n"
             "▰▰▰▰▰▰▰▰▰▰▰▰▰▰"
         ),
         inline=False
     )
     
-    # Section 5: Premium Membership
+    # Section 5: Premium Membership Features (Wizard Member)
     embed.add_field(
-        name="▸ 05. Wizard Member (PREMIUM)",
+        name="▸ 05. FITUR WIZARD MEMBER (PREMIUM TIER)",
         value=(
-            "➤ Cara berlangganan:\n"
-            "① Klik tombol di #verifikasi\n"
-            "② Pilih paket langganan\n"
-            "③ Lakukan pembayaran (DANA/QRIS) / gunakan Cryptocurency (USDT/ BTC).\n"
-            "④ Setelah pembayaran, lakukan verifikasi di kanal #bantuan\n"
-            "➤ Fitur eksklusif:\n"
-            "‣ Sinyal premium dengan analisis mendalam\n"
-            "‣ Tools trading canggih\n"
-            "‣ Prioritas konsultasi\n"
+            "```diff\n"
+            "+ 💎 #wizard-lounge-chat: Diskusi eksklusif & konsultasi premium bebas spam.\n"
+            "+ 🛠️ #wizard-toolkits: Alat bantu canggih & Kalkulator Risiko Trading presisi.\n"
+            "+ 📐 #wizard-strategy: Strategi trading premium yang dipacking siap pakai (SMC, dll).\n"
+            "+ 🪙 #wizard-crypto: Analisis harian premium mendalam untuk aset Crypto.\n"
+            "+ 💱 #wizard-forex: Analisis harian premium mendalam untuk pasangan Forex.\n"
+            "+ 🔱 #wizard-gold: Analisis harian premium mendalam untuk Emas & Komoditas.\n"
+            "+ 🎮 #relaxation-games: Arcade privat dengan 6 game seru (Slot, RPS, Dadu, Koin, Math, dll).\n"
+            "+ 🎵 #music-videos: Playlist kurasi khusus (Lo-Fi, Synthwave, Meditation) untuk fokus.\n"
+            "+ 🔊 #wizard-voice & #wizard-stage: Live analisis, webinar privat & voice eksklusif.\n"
+            "```\n"
+            "➤ **Cara Berlangganan:**\n"
+            "① Klik tombol **Langganan Premium** di `#verifikasi`\n"
+            "② Pilih paket langganan Anda (Bulanan / Tahunan)\n"
+            "③ Bayar via DANA, USDC (Crypto - Base/Solana), atau Bank/Kartu Transfer\n"
+            "④ Kirim bukti transfer di `#bantuan` ke Admin untuk aktivasi kilat!\n"
             "▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰"
         ),
         inline=False
@@ -4346,7 +4443,6 @@ async def send_analysis_embed(
 # --- Pilihan Pembayaran ---
 class PaymentSelect(discord.ui.Select):
     def __init__(self):
-        global PAYMENT_DANA_ACTIVE, PAYMENT_CRYPTO_ACTIVE, PAYMENT_CARD_ACTIVE
         options = []
         if PAYMENT_DANA_ACTIVE:
             options.append(discord.SelectOption(
@@ -4501,7 +4597,6 @@ class PaymentSelect(discord.ui.Select):
 class VerifView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
-        global DONATION_ACTIVE
         if not DONATION_ACTIVE:
             for child in self.children.copy():
                 if child.custom_id == "verif_donation":
@@ -5041,6 +5136,530 @@ class WizardLoungeView(View):
     @button(label="💬 Mulai Diskusi Baru", style=discord.ButtonStyle.success, custom_id="wizard_mulai_diskusi")
     async def mulai_diskusi(self, interaction: discord.Interaction, button: Button):
         await interaction.response.send_modal(DiskusiModal())
+
+# ===============================================================
+# 🎮 WIZARD ARCADE - RELAXATION GAMES SYSTEM
+# ===============================================================
+
+class TebakAngkaGameView(discord.ui.View):
+    def __init__(self, user_id: int):
+        super().__init__(timeout=120)
+        self.user_id = user_id
+        self.secret_number = random.randint(1, 20)
+        self.attempts = 0
+
+        # Add select menu for numbers 1-20
+        options = [discord.SelectOption(label=str(i), value=str(i)) for i in range(1, 21)]
+        self.select_menu = discord.ui.Select(
+            placeholder="Pilih tebakanmu (1-20)...",
+            options=options,
+            custom_id="game:tebak_angka_select"
+        )
+        self.select_menu.callback = self.guess_callback
+        self.add_item(self.select_menu)
+
+    async def guess_callback(self, interaction: discord.Interaction):
+        if interaction.user.id != self.user_id:
+            await interaction.response.send_message("❌ Ini bukan sesi game Anda!", ephemeral=True)
+            return
+
+        guess = int(self.select_menu.values[0])
+        self.attempts += 1
+
+        if guess == self.secret_number:
+            embed = discord.Embed(
+                title="🎉 TEBAKAN TEPAT!",
+                description=(
+                    f"Hebat {interaction.user.mention}!\n"
+                    f"Angka rahasianya adalah **{self.secret_number}**.\n"
+                    f"Anda berhasil menebak dalam **{self.attempts}** percobaan! 🏆"
+                ),
+                color=discord.Color.green()
+            )
+            self.clear_items()  # Stop the game
+            await interaction.response.edit_message(embed=embed, view=self)
+        elif guess < self.secret_number:
+            embed = discord.Embed(
+                title="🔢 TEBAK ANGKA (1-20)",
+                description=(
+                    f"Tebakan Anda: **{guess}**\n"
+                    f"💡 Petunjuk: **Terlalu RENDAH!**\n"
+                    f"Percobaan ke: `{self.attempts}`"
+                ),
+                color=discord.Color.blue()
+            )
+            await interaction.response.edit_message(embed=embed, view=self)
+        else:
+            embed = discord.Embed(
+                title="🔢 TEBAK ANGKA (1-20)",
+                description=(
+                    f"Tebakan Anda: **{guess}**\n"
+                    f"💡 Petunjuk: **Terlalu TINGGI!**\n"
+                    f"Percobaan ke: `{self.attempts}`"
+                ),
+                color=discord.Color.red()
+            )
+            await interaction.response.edit_message(embed=embed, view=self)
+
+
+class RockPaperScissorsView(discord.ui.View):
+    def __init__(self, user_id: int):
+        super().__init__(timeout=60)
+        self.user_id = user_id
+
+    async def play(self, interaction: discord.Interaction, player_choice: str):
+        if interaction.user.id != self.user_id:
+            await interaction.response.send_message("❌ Ini bukan sesi game Anda!", ephemeral=True)
+            return
+
+        choices = ["Batu", "Kertas", "Gunting"]
+        emojis = {"Batu": "🪨", "Kertas": "📄", "Gunting": "✂️"}
+        bot_choice = random.choice(choices)
+
+        # Determine winner
+        if player_choice == bot_choice:
+            result = "🤝 HASIL SERI!"
+            color = discord.Color.gold()
+        elif (player_choice == "Batu" and bot_choice == "Gunting") or \
+             (player_choice == "Kertas" and bot_choice == "Batu") or \
+             (player_choice == "Gunting" and bot_choice == "Kertas"):
+            result = "🎉 ANDA MENANG!"
+            color = discord.Color.green()
+        else:
+            result = "💀 BOT MENANG!"
+            color = discord.Color.red()
+
+        embed = discord.Embed(
+            title="🪨 SUT-SUT (Rock Paper Scissors)",
+            description=(
+                f"**{interaction.user.display_name}**: {emojis[player_choice]} {player_choice}\n"
+                f"**MountAlgo Bot**: {emojis[bot_choice]} {bot_choice}\n\n"
+                f"### {result}"
+            ),
+            color=color
+        )
+        await interaction.response.edit_message(embed=embed, view=self)
+
+    @discord.ui.button(label="Batu 🪨", style=discord.ButtonStyle.primary, custom_id="rps:batu")
+    async def batu(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await self.play(interaction, "Batu")
+
+    @discord.ui.button(label="Kertas 📄", style=discord.ButtonStyle.primary, custom_id="rps:kertas")
+    async def kertas(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await self.play(interaction, "Kertas")
+
+    @discord.ui.button(label="Gunting ✂️", style=discord.ButtonStyle.primary, custom_id="rps:gunting")
+    async def gunting(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await self.play(interaction, "Gunting")
+
+
+class CoinFlipView(discord.ui.View):
+    def __init__(self, user_id: int):
+        super().__init__(timeout=60)
+        self.user_id = user_id
+        self.wins = 0
+        self.total = 0
+
+    async def flip(self, interaction: discord.Interaction, guess: str):
+        if interaction.user.id != self.user_id:
+            await interaction.response.send_message("❌ Ini bukan sesi game Anda!", ephemeral=True)
+            return
+
+        result = random.choice(["Kepala", "Ekor"])
+        self.total += 1
+        is_correct = (guess == result)
+        if is_correct:
+            self.wins += 1
+
+        embed = discord.Embed(
+            title="🪙 LEMPAR KOIN KEBERUNTUNGAN",
+            description=(
+                f"Pilihan Anda: **{guess}**\n"
+                f"Hasil Koin: **{result}**\n\n"
+                f"{'🟢 **Tebakan Benar!**' if is_correct else '🔴 **Tebakan Salah!**'}\n\n"
+                f"📈 Skor Anda: `{self.wins}/{self.total}` (Win Rate: {int(self.wins/self.total*100) if self.total > 0 else 0}%)"
+            ),
+            color=discord.Color.green() if is_correct else discord.Color.red()
+        )
+        await interaction.response.edit_message(embed=embed, view=self)
+
+    @discord.ui.button(label="Kepala 🪙", style=discord.ButtonStyle.success, custom_id="coin:kepala")
+    async def kepala(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await self.flip(interaction, "Kepala")
+
+    @discord.ui.button(label="Ekor 🪙", style=discord.ButtonStyle.danger, custom_id="coin:ekor")
+    async def ekor(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await self.flip(interaction, "Ekor")
+
+
+class DiceRollView(discord.ui.View):
+    def __init__(self, user_id: int):
+        super().__init__(timeout=60)
+        self.user_id = user_id
+        self.player_score = 0
+        self.bot_score = 0
+
+    @discord.ui.button(label="Lempar Dadu 🎲", style=discord.ButtonStyle.primary, custom_id="dice:roll")
+    async def roll(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if interaction.user.id != self.user_id:
+            await interaction.response.send_message("❌ Ini bukan sesi game Anda!", ephemeral=True)
+            return
+
+        player_roll = random.randint(1, 6)
+        bot_roll = random.randint(1, 6)
+        dice_emojis = {1: "⚀", 2: "⚁", 3: "⚂", 4: "⚃", 5: "⚄", 6: "⚅"}
+
+        if player_roll > bot_roll:
+            result = "🎉 Anda memenangkan duel dadu ini!"
+            self.player_score += 1
+            color = discord.Color.green()
+        elif bot_roll > player_roll:
+            result = "💀 Bot memenangkan duel dadu ini!"
+            self.bot_score += 1
+            color = discord.Color.red()
+        else:
+            result = "🤝 Hasil Seri!"
+            color = discord.Color.gold()
+
+        embed = discord.Embed(
+            title="🎲 DUEL DADU",
+            description=(
+                f"Anda melempar: {dice_emojis[player_roll]} (**{player_roll}**)\n"
+                f"Bot melempar: {dice_emojis[bot_roll]} (**{bot_roll}**)\n\n"
+                f"### {result}\n\n"
+                f"🏆 **Skor Seri**: Anda `{self.player_score}` - `{self.bot_score}` Bot"
+            ),
+            color=color
+        )
+        await interaction.response.edit_message(embed=embed, view=self)
+
+
+class SlotMachineView(discord.ui.View):
+    def __init__(self, user_id: int):
+        super().__init__(timeout=60)
+        self.user_id = user_id
+        self.credits = 100
+
+    @discord.ui.button(label="Putar Slot 🎰 (Biaya: 10 Kredit)", style=discord.ButtonStyle.success, custom_id="slot:spin")
+    async def spin(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if interaction.user.id != self.user_id:
+            await interaction.response.send_message("❌ Ini bukan sesi game Anda!", ephemeral=True)
+            return
+
+        if self.credits < 10:
+            embed = discord.Embed(
+                title="🎰 MESIN SLOT WIZARD",
+                description="❌ Kredit Anda tidak mencukupi! Anda mendapatkan isi ulang gratis sebesar 100 Kredit.",
+                color=discord.Color.red()
+            )
+            self.credits = 100
+            await interaction.response.edit_message(embed=embed, view=self)
+            return
+
+        self.credits -= 10
+        items = ["🍒", "🍋", "🍊", "🍇", "🔔", "💎", "⭐"]
+        weights = [0.2, 0.2, 0.18, 0.15, 0.12, 0.08, 0.07]
+        reels = random.choices(items, weights=weights, k=3)
+
+        # Calculate winnings
+        if reels[0] == reels[1] == reels[2]:
+            if reels[0] == "💎":
+                win_amount = 250
+                msg = "🏆 MEGA JACKPOT! 💎💎💎 (+250 Kredit)"
+            elif reels[0] == "⭐":
+                win_amount = 150
+                msg = "🌟 SUPER JACKPOT! ⭐⭐⭐ (+150 Kredit)"
+            else:
+                win_amount = 80
+                msg = "🎉 JACKPOT! (+80 Kredit)"
+            self.credits += win_amount
+            color = discord.Color.green()
+        elif reels[0] == reels[1] or reels[1] == reels[2] or reels[0] == reels[2]:
+            win_amount = 20
+            self.credits += win_amount
+            msg = "🟢 Dua Sama! (+20 Kredit)"
+            color = discord.Color.gold()
+        else:
+            msg = "🔴 Tidak ada kecocokan. Coba lagi!"
+            color = discord.Color.red()
+
+        embed = discord.Embed(
+            title="🎰 MESIN SLOT WIZARD",
+            description=(
+                f"╔═══════════╗\n"
+                f"║  {reels[0]}  |  {reels[1]}  |  {reels[2]}  ║\n"
+                f"╚═══════════╝\n\n"
+                f"### {msg}\n\n"
+                f"💳 Sisa Kredit: **{self.credits}**"
+            ),
+            color=color
+        )
+        await interaction.response.edit_message(embed=embed, view=self)
+
+
+class QuickMathView(discord.ui.View):
+    def __init__(self, user_id: int):
+        super().__init__(timeout=60)
+        self.user_id = user_id
+        self.score = 0
+        self.num1 = 0
+        self.num2 = 0
+        self.op = ""
+        self.answer = 0
+        self.generate_question()
+
+    def generate_question(self):
+        self.op = random.choice(["+", "-", "*"])
+        if self.op == "+":
+            self.num1 = random.randint(5, 50)
+            self.num2 = random.randint(5, 50)
+            self.answer = self.num1 + self.num2
+        elif self.op == "-":
+            self.num1 = random.randint(20, 100)
+            self.num2 = random.randint(5, 20)
+            self.answer = self.num1 - self.num2
+        else:
+            self.num1 = random.randint(2, 12)
+            self.num2 = random.randint(2, 10)
+            self.answer = self.num1 * self.num2
+
+        # Clear existing buttons
+        self.clear_items()
+
+        # Generate options (1 correct, 3 wrong)
+        options = {self.answer}
+        while len(options) < 4:
+            offset = random.randint(-15, 15)
+            if offset != 0:
+                options.add(max(1, self.answer + offset))
+
+        # Add button for each option
+        options_list = list(options)
+        random.shuffle(options_list)
+
+        for opt in options_list:
+            btn = discord.ui.Button(
+                label=str(opt),
+                style=discord.ButtonStyle.secondary,
+                custom_id=f"math:opt_{opt}"
+            )
+            btn.callback = self.make_callback(opt)
+            self.add_item(btn)
+
+    def make_callback(self, val):
+        async def callback(interaction: discord.Interaction):
+            if interaction.user.id != self.user_id:
+                await interaction.response.send_message("❌ Ini bukan sesi game Anda!", ephemeral=True)
+                return
+
+            if val == self.answer:
+                self.score += 1
+                self.generate_question()
+                embed = discord.Embed(
+                    title="🧮 TANTANGAN MATEMATIKA CEPAT",
+                    description=(
+                        f"✅ **Benar!** Lanjut ke pertanyaan berikutnya!\n\n"
+                        f"### Pertanyaan: **{self.num1} {self.op} {self.num2} = ?**\n\n"
+                        f"🔥 Beruntun: `{self.score}`"
+                    ),
+                    color=discord.Color.green()
+                )
+                await interaction.response.edit_message(embed=embed, view=self)
+            else:
+                embed = discord.Embed(
+                    title="🧮 GAME OVER!",
+                    description=(
+                        f"❌ Jawaban salah!\n"
+                        f"Persamaan: **{self.num1} {self.op} {self.num2} = {self.answer}** (Anda menjawab **{val}**)\n\n"
+                        f"🏆 Skor Beruntun Akhir: `{self.score}`"
+                    ),
+                    color=discord.Color.red()
+                )
+                self.clear_items()
+                await interaction.response.edit_message(embed=embed, view=self)
+        return callback
+
+
+class RelaxationGamesView(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=None)
+
+    @discord.ui.button(
+        label="🎰 Mesin Slot",
+        style=discord.ButtonStyle.primary,
+        custom_id="arcade:slot_machine",
+        row=0
+    )
+    async def play_slot(self, interaction: discord.Interaction, button: discord.ui.Button):
+        view = SlotMachineView(interaction.user.id)
+        embed = discord.Embed(
+            title="🎰 MESIN SLOT WIZARD",
+            description="Klik tombol di bawah untuk memutar slot dan menangkan Jackpot! 💎",
+            color=discord.Color.purple()
+        )
+        await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
+
+    @discord.ui.button(
+        label="🪨 Gunting Batu Kertas",
+        style=discord.ButtonStyle.primary,
+        custom_id="arcade:rps",
+        row=0
+    )
+    async def play_rps(self, interaction: discord.Interaction, button: discord.ui.Button):
+        view = RockPaperScissorsView(interaction.user.id)
+        embed = discord.Embed(
+            title="🪨 SUT-SUT (Rock Paper Scissors)",
+            description="Pilih salah satu senjata Anda di bawah ini untuk melawan Bot!",
+            color=discord.Color.blue()
+        )
+        await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
+
+    @discord.ui.button(
+        label="🔢 Tebak Angka",
+        style=discord.ButtonStyle.primary,
+        custom_id="arcade:guess_number",
+        row=0
+    )
+    async def play_guess(self, interaction: discord.Interaction, button: discord.ui.Button):
+        view = TebakAngkaGameView(interaction.user.id)
+        embed = discord.Embed(
+            title="🔢 TEBAK ANGKA (1-20)",
+            description="Bot sudah memilih angka rahasia dari 1 hingga 20. Pilih tebakanmu di bawah!",
+            color=discord.Color.orange()
+        )
+        await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
+
+    @discord.ui.button(
+        label="🎲 Lempar Dadu",
+        style=discord.ButtonStyle.success,
+        custom_id="arcade:dice_roll",
+        row=1
+    )
+    async def play_dice(self, interaction: discord.Interaction, button: discord.ui.Button):
+        view = DiceRollView(interaction.user.id)
+        embed = discord.Embed(
+            title="🎲 DUEL DADU",
+            description="Lemparkan dadu Anda dan lihat apakah Anda bisa mengalahkan Bot!",
+            color=discord.Color.green()
+        )
+        await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
+
+    @discord.ui.button(
+        label="🪙 Lempar Koin",
+        style=discord.ButtonStyle.success,
+        custom_id="arcade:coin_flip",
+        row=1
+    )
+    async def play_coin(self, interaction: discord.Interaction, button: discord.ui.Button):
+        view = CoinFlipView(interaction.user.id)
+        embed = discord.Embed(
+            title="🪙 LEMPAR KOIN KEBERUNTUNGAN",
+            description="Pilih Kepala atau Ekor!",
+            color=discord.Color.teal()
+        )
+        await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
+
+    @discord.ui.button(
+        label="🧮 Matematika Cepat",
+        style=discord.ButtonStyle.success,
+        custom_id="arcade:quick_math",
+        row=1
+    )
+    async def play_math(self, interaction: discord.Interaction, button: discord.ui.Button):
+        view = QuickMathView(interaction.user.id)
+        embed = discord.Embed(
+            title="🧮 TANTANGAN MATEMATIKA CEPAT",
+            description=(
+                f"Selesaikan persamaan berikut secepatnya!\n\n"
+                f"### Pertanyaan: **{view.num1} {view.op} {view.num2} = ?**"
+            ),
+            color=discord.Color.light_grey()
+        )
+        await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
+
+
+async def send_relaxation_games_embed(channel: discord.TextChannel):
+    """Mengirim embed arena permainan arcade relaksasi"""
+    embed = discord.Embed(
+        title="🎮 WIZARD RELAXATION ARCADE",
+        description=(
+            "✨ **Selamat Datang di Arena Permainan Santai Wizard!** ✨\n\n"
+            "Lepaskan penat dan stres Anda setelah sesi trading yang melelahkan.\n"
+            "Semua game dimainkan secara privat (ephemeral) sehingga tidak mengganggu member lain.\n\n"
+            "▰▰▰▰▰▰** GAME MENANGKAN JACKPOT & SKOR **▰▰▰▰▰▰\n"
+            "● 🎰 **Mesin Slot** - Putar reels dan dapatkan Triple Diamond Jackpot!\n"
+            "● 🪨 **Gunting Batu Kertas** - Uji keberuntungan Anda melawan Bot.\n"
+            "● 🔢 **Tebak Angka** - Tebak angka rahasia (1-20) dengan petunjuk.\n"
+            "● 🎲 **Lempar Dadu** - Lempar dadu dan kumpulkan poin duel.\n"
+            "● 🪙 **Lempar Koin** - Lempar koin keberuntungan kepala atau ekor.\n"
+            "● 🧮 **Matematika Cepat** - Asah otak Anda dengan kuis beruntun.\n"
+            "▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n"
+            "```yaml\n"
+            "Silakan pilih permainan di bawah untuk memulai sesi privat Anda! 🎉\n"
+            "```"
+        ),
+        color=0xff00a0  # Pink neon arcade aesthetic
+    )
+    if channel.guild.me.display_avatar:
+        embed.set_thumbnail(url=channel.guild.me.display_avatar.url)
+    await channel.send(embed=embed, view=RelaxationGamesView())
+
+
+class MusicVideosView(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=None)
+        self.add_item(discord.ui.Button(
+            label="Lo-Fi Hip Hop Beats ☕",
+            style=discord.ButtonStyle.link,
+            url="https://www.youtube.com/watch?v=jfKfPfyJRdk"
+        ))
+        self.add_item(discord.ui.Button(
+            label="Synthwave Radio 🌌",
+            style=discord.ButtonStyle.link,
+            url="https://www.youtube.com/watch?v=4xDzrJKXOOY"
+        ))
+        self.add_item(discord.ui.Button(
+            label="Meditation & Focus 🧘",
+            style=discord.ButtonStyle.link,
+            url="https://www.youtube.com/watch?v=F_7PoXitnHM"
+        ))
+        self.add_item(discord.ui.Button(
+            label="Ambient Rain Sounds 🌧️",
+            style=discord.ButtonStyle.link,
+            url="https://www.youtube.com/watch?v=mPZkdNFkNps"
+        ))
+        self.add_item(discord.ui.Button(
+            label="Trading Focus Beats 📈",
+            style=discord.ButtonStyle.link,
+            url="https://www.youtube.com/watch?v=5qap5aO4i9A"
+        ))
+
+
+async def send_music_videos_embed(channel: discord.TextChannel):
+    """Mengirim embed playlist musik dan video relaksasi"""
+    embed = discord.Embed(
+        title="🎵 WIZARD MUSIC & VIDEOS RELAXATION",
+        description=(
+            "✨ **Pusat Musik & Relaksasi Khusus Anggota Premium Wizard!** ✨\n\n"
+            "Mendengarkan musik yang tepat dapat membantu menjaga fokus, menenangkan pikiran, "
+            "dan meningkatkan produktivitas saat mengamati grafik pasar.\n\n"
+            "Kami telah menyusun beberapa playlist terbaik untuk menemani aktivitas trading Anda:\n\n"
+            "▰▰▰▰▰** PLAYLIST PILIHAN UNTUK TRADER **▰▰▰▰▰\n"
+            "● ☕ **Lo-Fi Hip Hop Beats** - Santai, menenangkan, dan membantu fokus jangka panjang.\n"
+            "● 🌌 **Synthwave Radio** - Ketukan retro elektronik berenergi tinggi namun santai.\n"
+            "● 🧘 **Meditation & Focus** - Gelombang binaural untuk meditasi dan ketenangan pikiran.\n"
+            "● 🌧️ **Ambient Rain Sounds** - Suara rintik hujan alami untuk suasana yang damai.\n"
+            "● 📈 **Trading Focus Beats** - Musik instrumental khusus untuk menemani riset grafik.\n"
+            "▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n"
+            "```yaml\n"
+            "Silakan klik salah satu tombol di bawah untuk membuka playlist di browser atau aplikasi YouTube Anda! 🎧\n"
+            "```"
+        ),
+        color=0x1dd1a1  # Mint green positive aesthetic
+    )
+    if channel.guild.me.display_avatar:
+        embed.set_thumbnail(url=channel.guild.me.display_avatar.url)
+    await channel.send(embed=embed, view=MusicVideosView())
 
 # --- wizard-toolkits view ---
 class WizardToolkitsView(discord.ui.View):
@@ -8365,7 +8984,9 @@ class ServerBuilder:
             "wizard-lounge-chat": send_wizard_lounge_embed,
             "kontrol-pengguna": send_kontrol_pengguna_embed,
             "kontrol-admin": send_kontrol_admin_embed,
-            "wizard-toolkits": send_wizard_toolkits_embed
+            "wizard-toolkits": send_wizard_toolkits_embed,
+            "relaxation-games": send_relaxation_games_embed,
+            "music-videos": send_music_videos_embed
         }
         
         for channel_name, init_func in init_functions.items():
@@ -8468,6 +9089,10 @@ class ServerBuilder:
             await send_kontrol_admin_embed(channel_map["kontrol-admin"])
         if "wizard-toolkits" in channel_map:
             await send_wizard_toolkits_embed(channel_map["wizard-toolkits"])
+        if "relaxation-games" in channel_map:
+            await send_relaxation_games_embed(channel_map["relaxation-games"])
+        if "music-videos" in channel_map:
+            await send_music_videos_embed(channel_map["music-videos"])
       
 # ===================== EVENT HANDLER & COMMAND =====================
 # Pertama-tama setup database sebelum bot start
@@ -8636,6 +9261,8 @@ async def on_ready():
     bot.add_view(KontrolAdminView())
     bot.add_view(WizardToolkitsView())
     bot.add_view(ThreadManagementView())
+    bot.add_view(RelaxationGamesView())
+    bot.add_view(MusicVideosView())
 
     # =====================
     # 5️⃣ SETUP THREAD ANALISIS
@@ -8927,7 +9554,7 @@ async def on_message(message):
         return
     
     # Channel yang diawasi: lounge-chat utama dan thread turunannya
-    valid_parents = ["lounge-chat", "share-your-profits", "member-voice", "member-stage", "wizard-voice", "wizard-stage"]
+    valid_parents = ["lounge-chat", "share-your-profits", "member-voice", "member-stage", "wizard-voice", "wizard-stage", "wizard-lounge-chat"]
     
     # Identifikasi channel utama
     parent_channel = message.channel
