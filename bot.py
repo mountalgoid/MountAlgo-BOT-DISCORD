@@ -112,6 +112,7 @@ API_KEYS = {
     "DANA_TAHUNAN_LINK": os.getenv("DANA_TAHUNAN_LINK"),
     "USDC_BULANAN_LINK": os.getenv("USDC_BULANAN_LINK"),
     "USDC_TAHUNAN_LINK": os.getenv("USDC_TAHUNAN_LINK"),
+    "DONATION_LINK": os.getenv("DONATION_LINK"),
     "USDT_WALLET": os.getenv("USDT_WALLET"),
     "BTC_WALLET": os.getenv("BTC_WALLET"),
     "ETH_WALLET": os.getenv("ETH_WALLET"),
@@ -155,6 +156,8 @@ DANA_BULANAN_LINK = API_KEYS["DANA_BULANAN_LINK"]
 DANA_TAHUNAN_LINK = API_KEYS["DANA_TAHUNAN_LINK"]
 USDC_BULANAN_LINK = API_KEYS["USDC_BULANAN_LINK"]
 USDC_TAHUNAN_LINK = API_KEYS["USDC_TAHUNAN_LINK"]
+DONATION_LINK = API_KEYS["DONATION_LINK"]
+DONATION_ACTIVE = False
 USDT_WALLET = API_KEYS["USDT_WALLET"]
 BTC_WALLET = API_KEYS["BTC_WALLET"]
 ETH_WALLET = API_KEYS["ETH_WALLET"]
@@ -1743,6 +1746,14 @@ class Database:
                         last_violation TEXT
                     )
                 """)
+
+                # Buat tabel settings jika belum ada
+                await db.execute("""
+                    CREATE TABLE IF NOT EXISTS settings (
+                        key TEXT PRIMARY KEY,
+                        value TEXT
+                    )
+                """)
                 
                 # Perbaiki: Tambahkan mekanisme untuk menambahkan kolom secara kondisional
                 column_changes = [
@@ -1773,6 +1784,35 @@ class Database:
             raise
 
 
+
+    # --- settings db ---
+    @classmethod
+    async def get_setting(cls, key: str, default: str = None) -> str | None:
+        try:
+            async with aiosqlite.connect(cls.DB_PATH) as db:
+                async with db.execute("SELECT value FROM settings WHERE key = ?", (key,)) as cursor:
+                    row = await cursor.fetchone()
+                    if row:
+                        return row[0]
+                    return default
+        except Exception as e:
+            logging.error(f"get_setting error: {e}")
+            return default
+
+    @classmethod
+    async def set_setting(cls, key: str, value: str):
+        try:
+            async with aiosqlite.connect(cls.DB_PATH) as db:
+                await db.execute(
+                    "INSERT INTO settings (key, value) VALUES (?, ?) "
+                    "ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+                    (key, str(value))
+                )
+                await db.commit()
+                return True
+        except Exception as e:
+            logging.error(f"set_setting error: {e}")
+            return False
 
     # --- user db ---
     @classmethod
@@ -4314,6 +4354,11 @@ class PaymentSelect(discord.ui.Select):
 class VerifView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
+        global DONATION_ACTIVE
+        if not DONATION_ACTIVE:
+            for child in self.children.copy():
+                if child.custom_id == "verif_donation":
+                    self.remove_item(child)
 
     @discord.ui.button(
         label="✔ Setuju & Verifikasi",
@@ -4607,6 +4652,58 @@ class VerifView(discord.ui.View):
         view.add_item(PaymentSelect())
 
         await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
+
+    @discord.ui.button(
+        label="🎁 Donasi & Free Wizard",
+        style=discord.ButtonStyle.danger,
+        custom_id="verif_donation"
+    )
+    async def donation_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
+        user = interaction.user
+        guild = interaction.guild
+        user_id = user.id
+
+        # Update database with status WizardMemberBulanan
+        sub_type = "bulanan"
+        status = "WizardMemberBulanan"
+        days = 30
+        expiry = (datetime.utcnow() + timedelta(days=days)).isoformat()
+
+        # Update database
+        await Database.update_user_status(
+            user_id=user_id,
+            status=status,
+            subscription_type=sub_type.lower(),
+            expiry_date=expiry
+        )
+
+        # Apply roles in discord
+        await apply_user_roles(user, status)
+
+        # Send confirmation and donation link
+        donation_link = DONATION_LINK or "https://saweria.co/mountalgo"
+        embed = discord.Embed(
+            title="🎁 DUKUNGAN SERVER & WIZARD MEMBER GRATIS",
+            description=(
+                f"Terima kasih telah mendukung server **𝙈𝙤𝙪𝙣𝙩𝘼𝙡𝙜𝙤**! ❤️\n\n"
+                f"Sesuai dengan ketentuan kami, Anda berhak mendapatkan status **Wizard Member Bulanan** secara **GRATIS**! 🎉\n\n"
+                f"🔗 **Link Pembayaran/Donasi (Saweria/Payment Link):**\n"
+                f"[Klik di sini untuk melakukan Donasi]({donation_link})\n\n"
+                f"⚡ **Status Anda telah ditingkatkan menjadi Wizard Member!**\n"
+                f"Masa aktif berlaku selama **30 hari**.\n\n"
+                f"Silakan kunjungi channel-channel premium kami di kategori **🧬|WIZARD|🚀🚀**."
+            ),
+            color=discord.Color.gold()
+        )
+        embed.set_footer(text="MountAlgo Donation System")
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+
+        # Log to laporan channel
+        log_channel = discord.utils.get(guild.text_channels, name="laporan")
+        if log_channel:
+            await log_channel.send(
+                f"🎁 {user.mention} telah mengklaim **Wizard Member Gratis** via tombol Donasi!"
+            )
 
 # --- Bantuan ---
 class BantuanView(View):
@@ -5816,6 +5913,35 @@ class KontrolAdminView(discord.ui.View):
             view=view,
             ephemeral=True
         )
+
+    # ------------------------------------------------------
+    # 🎁 Tombol: Toggle Donasi
+    # ------------------------------------------------------
+    @discord.ui.button(
+        label="🎁 Toggle Tombol Donasi",
+        style=discord.ButtonStyle.success,
+        custom_id="admin_toggle_donation",
+        row=4
+    )
+    async def toggle_donation(self, interaction: discord.Interaction, button: discord.ui.Button):
+        global DONATION_ACTIVE
+        DONATION_ACTIVE = not DONATION_ACTIVE
+        await Database.set_setting("donation_button_active", str(DONATION_ACTIVE))
+
+        status_str = "AKTIF" if DONATION_ACTIVE else "NONAKTIF"
+        await interaction.response.send_message(
+            f"✅ Tombol Donasi di channel verifikasi sekarang **{status_str}**!\n"
+            f"Memulai proses pembaruan channel verifikasi...",
+            ephemeral=True
+        )
+
+        # Otomatis perbarui channel verifikasi
+        verif_channel = discord.utils.get(interaction.guild.text_channels, name="verifikasi")
+        if verif_channel:
+            try:
+                await VerificationSystem.update_verification_channel(verif_channel)
+            except Exception as e:
+                logging.error(f"Gagal update channel verifikasi saat toggle donasi: {e}")
 
 # ==========================================================
 # 💾 EXPORT DATA VIEW (DENGAN FITUR ZIP SEMUA DATA)
@@ -8151,6 +8277,12 @@ async def setup_hook():
     try:
         await Database.setup()
         logging.info("✅ Database setup selesai di setup_hook")
+
+        # Load global donation settings
+        global DONATION_ACTIVE
+        donation_setting = await Database.get_setting("donation_button_active", "False")
+        DONATION_ACTIVE = (donation_setting == "True")
+        logging.info(f"🎁 Status tombol donasi awal: {DONATION_ACTIVE}")
     except Exception as e:
         logging.error(f"❌ Gagal setup database: {e}")
 
