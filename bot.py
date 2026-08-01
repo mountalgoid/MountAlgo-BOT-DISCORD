@@ -110,6 +110,8 @@ API_KEYS = {
     "DISCORD_TOKEN": os.getenv("DISCORD_TOKEN"),
     "DANA_BULANAN_LINK": os.getenv("DANA_BULANAN_LINK"),
     "DANA_TAHUNAN_LINK": os.getenv("DANA_TAHUNAN_LINK"),
+    "USDC_BULANAN_LINK": os.getenv("USDC_BULANAN_LINK"),
+    "USDC_TAHUNAN_LINK": os.getenv("USDC_TAHUNAN_LINK"),
     "USDT_WALLET": os.getenv("USDT_WALLET"),
     "BTC_WALLET": os.getenv("BTC_WALLET"),
     "ETH_WALLET": os.getenv("ETH_WALLET"),
@@ -151,6 +153,8 @@ AI_MODEL = "mistralai/mixtral-8x7b-instruct"  # Model institutional-grade
 DISCORD_TOKEN = API_KEYS["DISCORD_TOKEN"]
 DANA_BULANAN_LINK = API_KEYS["DANA_BULANAN_LINK"]
 DANA_TAHUNAN_LINK = API_KEYS["DANA_TAHUNAN_LINK"]
+USDC_BULANAN_LINK = API_KEYS["USDC_BULANAN_LINK"]
+USDC_TAHUNAN_LINK = API_KEYS["USDC_TAHUNAN_LINK"]
 USDT_WALLET = API_KEYS["USDT_WALLET"]
 BTC_WALLET = API_KEYS["BTC_WALLET"]
 ETH_WALLET = API_KEYS["ETH_WALLET"]
@@ -4219,9 +4223,9 @@ class PaymentSelect(discord.ui.Select):
                 description="Tampilkan opsi pembayaran DANA"
             ),
             discord.SelectOption(
-                label="🪙 Bayar via Crypto",
+                label="🪙 Bayar via USDC (Crypto)",
                 value="crypto",
-                description="Tampilkan alamat wallet Crypto"
+                description="Tampilkan opsi pembayaran USDC (Crypto)"
             )
         ]
         super().__init__(
@@ -4240,9 +4244,8 @@ class PaymentSelect(discord.ui.Select):
         # Dapatkan nilai terbaru dari environment / API_KEYS
         dana_bulanan = DANA_BULANAN_LINK or "https://link.dana.id/qr/your_monthly_qr_id"
         dana_tahunan = DANA_TAHUNAN_LINK or "https://link.dana.id/qr/your_yearly_qr_id"
-        usdt_wal = USDT_WALLET or "TYourUSDTWalletAddressTRC20Here"
-        btc_wal = BTC_WALLET or "1YourBTCWalletAddressBitcoinNetworkHere"
-        eth_wal = ETH_WALLET or "0xYourETHWalletAddressERC20Here"
+        usdc_bulanan = USDC_BULANAN_LINK or "https://link.usdc.id/qr/your_monthly_usdc_id"
+        usdc_tahunan = USDC_TAHUNAN_LINK or "https://link.usdc.id/qr/your_yearly_usdc_id"
 
         # Bersihkan field pembayaran sebelumnya jika ada
         for i, field in enumerate(new_embed.fields):
@@ -4282,15 +4285,27 @@ class PaymentSelect(discord.ui.Select):
                 name="🪙 DETAIL PEMBAYARAN CRYPTO",
                 value=(
                     f"▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n"
-                    f"💵 **USDT (Network: TRC20):**\n`{usdt_wal}`\n\n"
-                    f"🪙 **BTC (Network: Bitcoin):**\n`{btc_wal}`\n\n"
-                    f"💎 **ETH (Network: ERC20):**\n`{eth_wal}`\n\n"
-                    f"⚠️ **PENTING:** Pastikan Anda mengirimkan koin ke alamat wallet dan jaringan (network) yang sesuai di atas. "
-                    f"Kesalahan pengiriman jaringan di luar tanggung jawab kami.\n"
+                    f"➩ **Pembayaran hanya menggunakan USDC (USDC ONLY).**\n\n"
+                    f"🌐 **Jaringan yang Didukung (Supported Networks):**\n"
+                    f"• **Base**\n"
+                    f"• **Solana**\n\n"
+                    f"💡 *Silakan klik tombol di bawah untuk membayar paket bulanan atau tahunan.*\n"
+                    f"💡 *Setelah pembayaran berhasil, kirim bukti transfer ke Admin untuk konfirmasi.*\n"
                     f"▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰"
                 ),
                 inline=False
             )
+            # Tambahkan tombol Link USDC untuk Bulanan dan Tahunan
+            view.add_item(discord.ui.Button(
+                label="⬈ Bayar USDC Bulanan",
+                url=usdc_bulanan,
+                style=discord.ButtonStyle.link
+            ))
+            view.add_item(discord.ui.Button(
+                label="⬈ Bayar USDC Tahunan",
+                url=usdc_tahunan,
+                style=discord.ButtonStyle.link
+            ))
 
         await interaction.response.edit_message(embed=new_embed, view=view)
 
