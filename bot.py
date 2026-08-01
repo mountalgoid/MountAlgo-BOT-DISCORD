@@ -5893,47 +5893,6 @@ class WizardChannelSelectView(discord.ui.View):
             AnalysisModal(title="Analisis Gold/Komoditas Pasar", thread_name="wizard-gold")
         )
 
-class AdminControlSelectorView(discord.ui.View):
-    def __init__(self):
-        super().__init__(timeout=None)
-
-    @discord.ui.button(
-        label="➮ Promosi / Degradasi Admin",
-        style=discord.ButtonStyle.danger,
-        custom_id="admin_open_access_modal",
-        row=0
-    )
-    async def open_modal(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await interaction.response.send_modal(AdminAccessModal())
-
-    @discord.ui.button(
-        label="✇ Atur Izin Saluran",
-        style=discord.ButtonStyle.primary,
-        custom_id="admin_selector_set_permissions",
-        row=0
-    )
-    async def set_permissions_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await interaction.response.defer(ephemeral=True, thinking=True)
-        success_count, error_count, error_details = await apply_channel_permissions(interaction.guild)
-        embed = await send_permission_update_embed(interaction, success_count, error_count, error_details)
-        await interaction.followup.send(embed=embed, ephemeral=True)
-
-    @discord.ui.button(
-        label="🔄 Setup Ulang Saluran",
-        style=discord.ButtonStyle.secondary,
-        custom_id="admin_selector_setup_channels",
-        row=0
-    )
-    async def setup_channels_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
-        view = ConfirmSetupUlangView()
-        await interaction.response.send_message(
-            "⚠️ **PERINGATAN KRITIS:** Apakah Anda yakin ingin melakukan Setting Up Ulang?\n"
-            "Tindakan ini akan menghapus dan membuat ulang seluruh kategori, channel, dan izin di server ini! "
-            "Proses ini **tidak dapat dibatalkan** setelah dimulai.",
-            view=view,
-            ephemeral=True
-        )
-
 class KontrolAdminView(discord.ui.View):
     """Panel kontrol utama untuk Admin MountAlgo"""
     def __init__(self):
@@ -6080,33 +6039,7 @@ class KontrolAdminView(discord.ui.View):
         row=3
     )
     async def admin_control_access(self, interaction: discord.Interaction, button: discord.ui.Button):
-        embed = discord.Embed(
-            title="👑 OTORISASI & KONTROL AKSES ADMIN",
-            description=(
-                "Berikut adalah kategori, saluran, dan izin default yang diizinkan untuk dikontrol "
-                "oleh Admin server **𝙈𝙤𝙪𝙣𝙩𝘼𝙡𝙜𝙤** (Default: Full Access / Akses Penuh):\n\n"
-                "📂 **Kategori & Saluran yang Diizinkan (Allowed Categories & Channels):**\n"
-                "• **🌏 HALAMAN UTAMA**\n"
-                "  - `#welcome`, `#peraturan`, `#disclaimer`, `#verifikasi` *(Kelola Pesan)*\n"
-                "• **🔥 MEMBER**\n"
-                "  - `#bantuan`, `#pengumuman`, `#all-news`, `#lounge-chat`, `#roadmap_trader`, `#akademi`, `#free-indikator`, `#share-your-profits`, `#member-voice`, `#member-stage` *(Kirim/Kelola Pesan, Moderasi Suara)*\n"
-                "• **🧬 WIZARD (Premium)**\n"
-                "  - `#wizard-lounge-chat`, `#wizard-toolkits`, `#wizard-strategy`, `#wizard-crypto`, `#wizard-forex`, `#wizard-gold`, `#wizard-voice`, `#wizard-stage` *(Kirim/Kelola Sinyal & Analisis, Moderasi)*\n"
-                "• **🧩 CYPHER (Internal)**\n"
-                "  - `#kontrol-admin`, `#kontrol-pengguna`, `#laporan`, `#bot3` *(Akses Kontrol Penuh)*\n\n"
-                "🛡️ **Izin Default Otoritas (Default Admin Permissions):**\n"
-                "• **Administrator**: `Aktif [✓] (Full Access)`\n"
-                "• **Kelola Peran (Manage Roles)**: `Aktif [✓]`\n"
-                "• **Kelola Saluran (Manage Channels)**: `Aktif [✓]`\n"
-                "• **Kelola Pesan (Manage Messages)**: `Aktif [✓]`\n"
-                "• **Lihat Log Audit (View Audit Log)**: `Aktif [✓]`\n\n"
-                "💡 *Tekan tombol di bawah untuk membuka modal Promosi / Degradasi Admin.*"
-            ),
-            color=discord.Color.red()
-        )
-        embed.set_footer(text="MountAlgo Access Otoritas System")
-        embed.set_thumbnail(url=interaction.guild.me.display_avatar.url)
-        await interaction.response.send_message(embed=embed, view=AdminControlSelectorView(), ephemeral=True)
+        await interaction.response.send_modal(AdminAccessModal())
 
     # ------------------------------------------------------
     # 🔧 Tombol: Atur Izin Channel
@@ -8703,7 +8636,6 @@ async def on_ready():
     bot.add_view(KontrolAdminView())
     bot.add_view(WizardToolkitsView())
     bot.add_view(ThreadManagementView())
-    bot.add_view(AdminControlSelectorView())
 
     # =====================
     # 5️⃣ SETUP THREAD ANALISIS
