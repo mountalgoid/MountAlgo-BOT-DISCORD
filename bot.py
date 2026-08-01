@@ -162,6 +162,13 @@ CARD_BULANAN_LINK = API_KEYS["CARD_BULANAN_LINK"]
 CARD_TAHUNAN_LINK = API_KEYS["CARD_TAHUNAN_LINK"]
 DONATION_LINK = API_KEYS["DONATION_LINK"]
 DONATION_ACTIVE = False
+# Theme Colors (Violet, Green, Slightly Cyan, White, Dark)
+COLOR_VIOLET = 0x8B5CF6
+COLOR_GREEN = 0x10B981
+COLOR_CYAN = 0x06B6D4
+COLOR_WHITE = 0xF9FAFB
+COLOR_DARK = 0x111827
+
 PAYMENT_DANA_ACTIVE = True
 PAYMENT_CRYPTO_ACTIVE = True
 PAYMENT_CARD_ACTIVE = True
@@ -246,7 +253,7 @@ async def hapus_thread_usang(interaction: discord.Interaction, hari: int = 14):
             f"🗑️ **Total dihapus:** `{total_deleted}`\n"
             f"⏰ **Batas umur:** `{hari}` hari"
         ),
-        color=discord.Color.green(),
+        color=discord.Color(COLOR_GREEN),
         timestamp=datetime.now()
     )
     embed.set_footer(text=f"Dijalankan oleh {interaction.user.display_name}")
@@ -902,7 +909,7 @@ async def check_Wizard_member_expiry():
                                 "✨ Untuk memperpanjang langganan, silakan hubungi admin "
                                 "atau gunakan tombol **Langganan Premium** di channel `#verifikasi`."
                             ),
-                            color=discord.Color.dark_grey()
+                            color=discord.Color(COLOR_DARK)
                         )
                         await member.send(embed=embed)
                     except discord.Forbidden:
@@ -970,12 +977,12 @@ STATUS_ROLES = list(STATUS_ROLE_MAP.values())
 async def ensure_core_roles(guild: discord.Guild):
     """Pastikan semua role inti sudah dibuat"""
     role_configs = {
-        "Member": discord.Color.blue(),
-        "WizardMemberBulanan": discord.Color.gold(),
-        "WizardMemberTahunan": discord.Color.purple(),  # Warna berbeda untuk tahunan
-        "Admin": discord.Color.red(),
-        "Unverified": discord.Color.dark_grey(),
-        "Muted": discord.Color.darker_grey()
+        "Member": discord.Color(COLOR_CYAN),
+        "WizardMemberBulanan": discord.Color(COLOR_GREEN),
+        "WizardMemberTahunan": discord.Color(COLOR_VIOLET),
+        "Admin": discord.Color(COLOR_VIOLET),
+        "Unverified": discord.Color(COLOR_DARK),
+        "Muted": discord.Color(COLOR_DARK)
     }
     
     for role_name, color in role_configs.items():
@@ -1064,7 +1071,7 @@ class VerificationSystem:
                 "```\n"
                 "Hanya anggota terverifikasi yang bisa mengakses channel server."
             ),
-            color=0x5865F2
+            color=COLOR_VIOLET
         )
         embed.add_field(
             name="⚠ PENTING",
@@ -1261,25 +1268,25 @@ async def apply_user_roles(member: discord.Member, status: str):
             member_role = await member.guild.create_role(
                 name="Member",
                 reason="Role otomatis",
-                color=discord.Color.blue()
+                color=discord.Color(COLOR_CYAN)
             )
         if not Wizard_bulanan_role:
             Wizard_bulanan_role = await member.guild.create_role(
                 name="WizardMemberBulanan",
                 reason="Role otomatis",
-                color=discord.Color.gold()
+                color=discord.Color(COLOR_GREEN)
             )
         if not Wizard_tahunan_role:
             Wizard_tahunan_role = await member.guild.create_role(
                 name="WizardMemberTahunan",
                 reason="Role otomatis",
-                color=discord.Color.purple()
+                color=discord.Color(COLOR_VIOLET)
             )
         if not admin_role:
             admin_role = await member.guild.create_role(
                 name="Admin",
                 reason="Role otomatis",
-                color=discord.Color.red(),
+                color=discord.Color(COLOR_VIOLET),
                 permissions=discord.Permissions(administrator=True)
             )
         elif not admin_role.permissions.administrator:
@@ -1291,7 +1298,7 @@ async def apply_user_roles(member: discord.Member, status: str):
             unverified_role = await member.guild.create_role(
                 name="Unverified",
                 reason="Role otomatis",
-                color=discord.Color.dark_grey()
+                color=discord.Color(COLOR_DARK)
             )
         
         # Hapus semua role level sebelumnya
@@ -3105,11 +3112,11 @@ async def send_permission_update_embed(interaction: Optional[discord.Interaction
     # Tentukan warna berdasarkan hasil
     if error_count == 0:
         title = "⦿ PERMISSION CONFIGURATION SUCCESS"
-        color = 0x089981  # Positive green
+        color = COLOR_GREEN  # Positive green
         description = "▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n✔ Semua izin channel telah diatur ulang dengan sukses!\n▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰"
     else:
         title = "⚠ PERMISSION CONFIGURATION WARNING"
-        color = 0x5134ff  # Notice blue (changed from orange for better visibility)
+        color = COLOR_VIOLET  # Notice blue (changed from orange for better visibility)
         description = (
             "▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n"
             f"Pengaturan izin selesai dengan {success_count} berhasil,\n"
@@ -3182,7 +3189,7 @@ async def send_permission_update_embed(interaction: Optional[discord.Interaction
 async def send_welcome_embed(channel: discord.TextChannel):
     """Mengirim embed welcome dengan desain khusus dan tombol ke channel peraturan"""
     # Buat objek embed
-    embed = discord.Embed(color=0x5134ff)  # Gunakan warna #5134ff
+    embed = discord.Embed(color=COLOR_VIOLET)  # Gunakan warna #5134ff
 
     # Teks besar di tengah vertikal (format: tebal, italic)
     large_text ="|\n|\n|\n|\n|\n|\n|\n|\n|\n|\n|\n|\n|\n|\n|\n|\n|\n|\n|\n|\n\n" "***▰▰▰▰▰ KNOWING THEN RUNNING / LEAVING***" "\n"
@@ -3220,7 +3227,7 @@ async def send_peraturan_embed(channel: discord.TextChannel):
             "✇ Agar server tetap nyaman, aman, dan bermanfaat untuk semua,\n"
             "✇ harap baca dan patuhi peraturan berikut:"
         ),
-        color=0x2ecc71
+        color=COLOR_GREEN
     )
     embed.add_field(
         name="➮ ➊ Saling Menghormati",
@@ -3286,7 +3293,7 @@ async def send_disclaimer_embed(channel: discord.TextChannel):
             "**Komunitas ini adalah ruang edukasi mandiri, bukan platform investasi berizin**\n"
             "Silakan baca pernyataan berikut dengan saksama ⚠️"
         ),
-        color=0x3498db  # Warna biru yang lebih ramah
+        color=COLOR_CYAN  # Warna biru yang lebih ramah
     )
     
     # Header hukum dengan penyampaian lebih positif
@@ -3395,7 +3402,7 @@ async def send_verifikasi_embed(channel: discord.TextChannel):
             "☛ Pastikan sudah membaca [Peraturan](#peraturan) dan [Disclaimer](#disclaimer) sebelum melanjutkan.\n"
             "▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰"
         ),
-        color=0x1abc9c
+        color=COLOR_CYAN
     )
     embed.add_field(
         name="❑ Privasi & Keamanan",
@@ -3425,7 +3432,7 @@ async def send_verifikasi_sukses_embed(user, channel):
             "✇ Akses penuh ke channel edukasi, diskusi,\n"
             "▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰"
         ),
-        color=0x27ae60
+        color=COLOR_GREEN
     )
     
     embed.set_thumbnail(url=channel.guild.me.display_avatar.url)
@@ -3460,12 +3467,12 @@ async def send_premium_sukses_embed(user, channel, expired_date):
             "‣ **Wizard Toolkits**: Kalkulator & analisis risiko trading presisi harian.\n"
             "‣ **Wizard Analisis**: Analisis teknikal/fundamental mendalam untuk Crypto, Forex & Emas.\n"
             "‣ **Wizard Strategi**: Strategi trading siap pakai yang dipacking profesional.\n"
-            "‣ **Relaxation Arcade**: Mini-game interaktif (Slot, RPS, Dadu, Koin, Math) di `#relaxation-games`.\n"
-            "‣ **Music & Videos**: Playlist lo-fi, synthwave & ambient focus di `#music-videos`.\n\n"
+            "‣ **Relaxation Space**: Ruang santai bermain game di `#relaxation-games`.\n"
+            "‣ **Music & Videos**: Berbagi & nikmati musik santai di `#music-videos`.\n\n"
             f"▹ Langganan aktif hingga: **{format_wib(expired_wib)}**\n"
             f"▰▰▰▰▰▰▰▰▰▰▰▰▰▰"
         ),
-        color=0x5134ff  # Positive color
+        color=COLOR_VIOLET  # Positive color
     )
     
     embed.set_thumbnail(url=channel.guild.me.display_avatar.url)
@@ -3477,7 +3484,7 @@ async def send_premium_sukses_embed(user, channel, expired_date):
             "▹ Akses penuh alat bantu trading canggih multi-sumber\n"
             "▹ Ruang diskusi premium bebas spam & interaktif\n"
             "▹ Prioritas konsultasi personal langsung dengan Admin\n"
-            "▹ Game santai pengusir stres setelah trading"
+            "▹ Ruang santai pengusir stres setelah trading"
         ),
         inline=False
     )
@@ -3514,7 +3521,7 @@ async def send_hubungi_admin_embed(guild: discord.Guild, interaction: discord.In
             "⚠ Mohon tunggu beberapa saat dan pastikan DM kamu terbuka untuk admin.\n"
             "▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰"
         ),
-        color=0x5134ff
+        color=COLOR_VIOLET
     )
 
     user_embed.add_field(
@@ -3627,7 +3634,7 @@ def send_faq_embed():
             "**Baca baik-baik sebelum bertanya ke admin!**\n"
             "▰▰▰▰▰▰▰▰▰▰▰▰▰"
         ),
-        color=0x5865F2
+        color=COLOR_VIOLET
     )
     
     # Section 1: Basic Information
@@ -3693,8 +3700,8 @@ def send_faq_embed():
             "+ 🪙 #wizard-crypto: Analisis harian premium mendalam untuk aset Crypto.\n"
             "+ 💱 #wizard-forex: Analisis harian premium mendalam untuk pasangan Forex.\n"
             "+ 🔱 #wizard-gold: Analisis harian premium mendalam untuk Emas & Komoditas.\n"
-            "+ 🎮 #relaxation-games: Arcade privat dengan 6 game seru (Slot, RPS, Dadu, Koin, Math, dll).\n"
-            "+ 🎵 #music-videos: Playlist kurasi khusus (Lo-Fi, Synthwave, Meditation) untuk fokus.\n"
+            "+ 🎮 #relaxation-games: Kanal khusus berbagi & bermain game santai favorit Anda.\n"
+            "+ 🎵 #music-videos: Kanal khusus untuk berbagi playlist, musik, & video santai.\n"
             "+ 🔊 #wizard-voice & #wizard-stage: Live analisis, webinar privat & voice eksklusif.\n"
             "```\n"
             "➤ **Cara Berlangganan:**\n"
@@ -3763,7 +3770,7 @@ async def send_bantuan_embed(channel: discord.TextChannel):
             "**Pertanyaan kompleks?** Hubungi admin via tombol khusus.\n"
             "▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰"
         ),
-        color=0x5865F2
+        color=COLOR_VIOLET
     )
     
     embed.add_field(
@@ -3859,7 +3866,7 @@ async def send_obrolan_embed(channel: discord.TextChannel):
             "‣ Tanya jawab seputar trading\n"
             "▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰"
         ),
-        color=0x7289da
+        color=COLOR_VIOLET
     )
     
     embed.add_field(
@@ -3927,7 +3934,7 @@ async def send_wizard_lounge_embed(channel: discord.TextChannel):
             "‣ Ruang diskusi bebas dengan sesama trader premium\n"
             "▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰"
         ),
-        color=0x5134ff
+        color=COLOR_VIOLET
     )
     embed.add_field(
         name="💬 MULAI DISKUSI KHUSUS WIZARD",
@@ -3968,7 +3975,7 @@ async def send_wizard_toolkits_embed(channel: discord.TextChannel):
             "➩ Derivatif: Indeks, Minyak, Gas Alam\n"
             "```"
         ),
-        color=0x5134ff  # Biru positif
+        color=COLOR_VIOLET  # Biru positif
     )
     embed.set_thumbnail(url=channel.guild.me.display_avatar.url)
     await channel.send(embed=embed, view=WizardToolkitsView())
@@ -3981,7 +3988,7 @@ async def send_panduan_calculator_embed():
             "Kalkulator ini dirancang untuk memberikan **Analisis Lebih Mendalam** untuk hasil trading Lebih maksimal. Berikut panduan lengkap:\n"
             "▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰"
         ),
-        color=0x5134ff  # Biru positif
+        color=COLOR_VIOLET  # Biru positif
     )
 
     embed.add_field(
@@ -4093,7 +4100,7 @@ async def send_risk_template_embed():
             "dengan mempertimbangkan fee broker, volatilitas, dan optimalisasi posisi:\n"
             "▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰"
         ),
-        color=0x5134ff  # Biru positif
+        color=COLOR_VIOLET  # Biru positif
     )
 
     # Risiko Rendah
@@ -4265,7 +4272,7 @@ async def send_kontrol_pengguna_embed(channel: discord.TextChannel):
             "▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n"
             "➮ Hanya admin yang dapat mengakses panel ini"
         ),
-        color=0x5134ff  # Biru positif
+        color=COLOR_VIOLET  # Biru positif
     )
     embed.set_footer(
         text="Komunitas Trading MountAlgo ● Panel Kontrol Pengguna",
@@ -4283,7 +4290,7 @@ async def send_kontrol_admin_embed(channel: discord.TextChannel):
             "▰▰▰▰▰▰▰▰▰▰▰▰▰\n"
             "➩ Setiap tindakan dicatat otomatis di #laporan"
         ),
-        color=0x5134ff  # Biru positif
+        color=COLOR_VIOLET  # Biru positif
     )
     embed.add_field(
         name="❑ MANAJEMEN KONTEN",
@@ -4364,7 +4371,7 @@ async def send_laporan_embed(
     judul: str,
     deskripsi: str,
     fields: list = None,
-    warna: int = 0x089981,  # Hijau negatif
+    warna: int = COLOR_GREEN,  # Hijau negatif
     thumbnail: str = "https://cdn-icons-png.flaticon.com/512/595/595067.png"
 ):
     wib_now = to_wib(get_utc_now())
@@ -4416,7 +4423,7 @@ async def send_analysis_embed(
     embed = discord.Embed(
         title=title,
         description=description,
-        color=discord.Color.blue()
+        color=discord.Color(COLOR_CYAN)
     )
     
     # Tambahkan URL file jika ada
@@ -4638,7 +4645,7 @@ class VerifView(discord.ui.View):
             embed = discord.Embed(
                 title="💎 STATUS Wizard Member Bulanan",
                 description="Kamu sudah **terverifikasi** dan **berlangganan WizardMember bulanan**.\nAkses premium aktif, nikmati seluruh fitur eksklusif MountAlgo!",
-                color=0x5134ff
+                color=COLOR_VIOLET
             )
             embed.add_field(
                 name="Fitur Premium",
@@ -4659,7 +4666,7 @@ class VerifView(discord.ui.View):
             embed = discord.Embed(
                 title="🏆 STATUS Wizard Member Tahunan",
                 description="Kamu sudah **terverifikasi** dan **berlangganan WizardMember Tahunan**.\nAkses premium aktif, nikmati seluruh fitur eksklusif MountAlgo!",
-                color=0x5134ff
+                color=COLOR_VIOLET
             )
             embed.add_field(
                 name="Fitur Premium",
@@ -4680,7 +4687,7 @@ class VerifView(discord.ui.View):
             embed = discord.Embed(
                 title="✅ STATUS MEMBER TERVERIFIKASI",
                 description="Kamu sudah **terverifikasi** sebagai member MountAlgo.\nTidak perlu verifikasi lagi, akses channel publik sudah terbuka.",
-                color=0x27ae60
+                color=COLOR_GREEN
             )
             embed.add_field(
                 name="Tips Member",
@@ -4816,7 +4823,7 @@ class VerifView(discord.ui.View):
                 "▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n"
                 "➩ Pilih paket langganan di bawah ini:"
             ),
-            color=0x089981  # Hijau negatif
+            color=COLOR_GREEN  # Hijau negatif
         )
         
         # Fungsi untuk membuat bar fitur
@@ -4952,7 +4959,7 @@ class BantuanView(View):
 
             user_id, username, status, sub_type, expiry = user_data
             role_display = "👤 Member Biasa"
-            color = discord.Color.blue()
+            color = discord.Color(COLOR_CYAN)
             expiry_text = "-"
             subscription_label = "Tidak Aktif"
 
@@ -4965,7 +4972,7 @@ class BantuanView(View):
                     expiry_text = format_wib(expiry)
             elif status == "WizardMemberTahunan":
                 role_display = "👑 **Wizard Member Tahunan**"
-                color = discord.Color.purple()
+                color = discord.Color(COLOR_VIOLET)
                 subscription_label = "Tahunan (365 Hari)"
                 if expiry:
                     expiry_text = format_wib(expiry)
@@ -4976,7 +4983,7 @@ class BantuanView(View):
                 expiry_text = "-"
             else:
                 role_display = "👤 **Member Biasa**"
-                color = discord.Color.blurple()
+                color = discord.Color(COLOR_VIOLET)
 
             # --- Cek Role Discord Langsung ---
             member = guild.get_member(user_id)
@@ -5014,7 +5021,7 @@ class BantuanView(View):
     async def verif_langganan(self, interaction: discord.Interaction, button: Button):
         embed = discord.Embed(
             title="➮ PANDUAN VERIFIKASI KEANGGOTAAN Wizard",
-            color=0x089981,  # Hijau negatif
+            color=COLOR_GREEN,  # Hijau negatif
             description=(
                 "☛ Langkah-langkah untuk Mengaktifkan Keanggotaan Wizard\n"
                 "▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n"
@@ -5136,530 +5143,6 @@ class WizardLoungeView(View):
     @button(label="💬 Mulai Diskusi Baru", style=discord.ButtonStyle.success, custom_id="wizard_mulai_diskusi")
     async def mulai_diskusi(self, interaction: discord.Interaction, button: Button):
         await interaction.response.send_modal(DiskusiModal())
-
-# ===============================================================
-# 🎮 WIZARD ARCADE - RELAXATION GAMES SYSTEM
-# ===============================================================
-
-class TebakAngkaGameView(discord.ui.View):
-    def __init__(self, user_id: int):
-        super().__init__(timeout=120)
-        self.user_id = user_id
-        self.secret_number = random.randint(1, 20)
-        self.attempts = 0
-
-        # Add select menu for numbers 1-20
-        options = [discord.SelectOption(label=str(i), value=str(i)) for i in range(1, 21)]
-        self.select_menu = discord.ui.Select(
-            placeholder="Pilih tebakanmu (1-20)...",
-            options=options,
-            custom_id="game:tebak_angka_select"
-        )
-        self.select_menu.callback = self.guess_callback
-        self.add_item(self.select_menu)
-
-    async def guess_callback(self, interaction: discord.Interaction):
-        if interaction.user.id != self.user_id:
-            await interaction.response.send_message("❌ Ini bukan sesi game Anda!", ephemeral=True)
-            return
-
-        guess = int(self.select_menu.values[0])
-        self.attempts += 1
-
-        if guess == self.secret_number:
-            embed = discord.Embed(
-                title="🎉 TEBAKAN TEPAT!",
-                description=(
-                    f"Hebat {interaction.user.mention}!\n"
-                    f"Angka rahasianya adalah **{self.secret_number}**.\n"
-                    f"Anda berhasil menebak dalam **{self.attempts}** percobaan! 🏆"
-                ),
-                color=discord.Color.green()
-            )
-            self.clear_items()  # Stop the game
-            await interaction.response.edit_message(embed=embed, view=self)
-        elif guess < self.secret_number:
-            embed = discord.Embed(
-                title="🔢 TEBAK ANGKA (1-20)",
-                description=(
-                    f"Tebakan Anda: **{guess}**\n"
-                    f"💡 Petunjuk: **Terlalu RENDAH!**\n"
-                    f"Percobaan ke: `{self.attempts}`"
-                ),
-                color=discord.Color.blue()
-            )
-            await interaction.response.edit_message(embed=embed, view=self)
-        else:
-            embed = discord.Embed(
-                title="🔢 TEBAK ANGKA (1-20)",
-                description=(
-                    f"Tebakan Anda: **{guess}**\n"
-                    f"💡 Petunjuk: **Terlalu TINGGI!**\n"
-                    f"Percobaan ke: `{self.attempts}`"
-                ),
-                color=discord.Color.red()
-            )
-            await interaction.response.edit_message(embed=embed, view=self)
-
-
-class RockPaperScissorsView(discord.ui.View):
-    def __init__(self, user_id: int):
-        super().__init__(timeout=60)
-        self.user_id = user_id
-
-    async def play(self, interaction: discord.Interaction, player_choice: str):
-        if interaction.user.id != self.user_id:
-            await interaction.response.send_message("❌ Ini bukan sesi game Anda!", ephemeral=True)
-            return
-
-        choices = ["Batu", "Kertas", "Gunting"]
-        emojis = {"Batu": "🪨", "Kertas": "📄", "Gunting": "✂️"}
-        bot_choice = random.choice(choices)
-
-        # Determine winner
-        if player_choice == bot_choice:
-            result = "🤝 HASIL SERI!"
-            color = discord.Color.gold()
-        elif (player_choice == "Batu" and bot_choice == "Gunting") or \
-             (player_choice == "Kertas" and bot_choice == "Batu") or \
-             (player_choice == "Gunting" and bot_choice == "Kertas"):
-            result = "🎉 ANDA MENANG!"
-            color = discord.Color.green()
-        else:
-            result = "💀 BOT MENANG!"
-            color = discord.Color.red()
-
-        embed = discord.Embed(
-            title="🪨 SUT-SUT (Rock Paper Scissors)",
-            description=(
-                f"**{interaction.user.display_name}**: {emojis[player_choice]} {player_choice}\n"
-                f"**MountAlgo Bot**: {emojis[bot_choice]} {bot_choice}\n\n"
-                f"### {result}"
-            ),
-            color=color
-        )
-        await interaction.response.edit_message(embed=embed, view=self)
-
-    @discord.ui.button(label="Batu 🪨", style=discord.ButtonStyle.primary, custom_id="rps:batu")
-    async def batu(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await self.play(interaction, "Batu")
-
-    @discord.ui.button(label="Kertas 📄", style=discord.ButtonStyle.primary, custom_id="rps:kertas")
-    async def kertas(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await self.play(interaction, "Kertas")
-
-    @discord.ui.button(label="Gunting ✂️", style=discord.ButtonStyle.primary, custom_id="rps:gunting")
-    async def gunting(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await self.play(interaction, "Gunting")
-
-
-class CoinFlipView(discord.ui.View):
-    def __init__(self, user_id: int):
-        super().__init__(timeout=60)
-        self.user_id = user_id
-        self.wins = 0
-        self.total = 0
-
-    async def flip(self, interaction: discord.Interaction, guess: str):
-        if interaction.user.id != self.user_id:
-            await interaction.response.send_message("❌ Ini bukan sesi game Anda!", ephemeral=True)
-            return
-
-        result = random.choice(["Kepala", "Ekor"])
-        self.total += 1
-        is_correct = (guess == result)
-        if is_correct:
-            self.wins += 1
-
-        embed = discord.Embed(
-            title="🪙 LEMPAR KOIN KEBERUNTUNGAN",
-            description=(
-                f"Pilihan Anda: **{guess}**\n"
-                f"Hasil Koin: **{result}**\n\n"
-                f"{'🟢 **Tebakan Benar!**' if is_correct else '🔴 **Tebakan Salah!**'}\n\n"
-                f"📈 Skor Anda: `{self.wins}/{self.total}` (Win Rate: {int(self.wins/self.total*100) if self.total > 0 else 0}%)"
-            ),
-            color=discord.Color.green() if is_correct else discord.Color.red()
-        )
-        await interaction.response.edit_message(embed=embed, view=self)
-
-    @discord.ui.button(label="Kepala 🪙", style=discord.ButtonStyle.success, custom_id="coin:kepala")
-    async def kepala(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await self.flip(interaction, "Kepala")
-
-    @discord.ui.button(label="Ekor 🪙", style=discord.ButtonStyle.danger, custom_id="coin:ekor")
-    async def ekor(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await self.flip(interaction, "Ekor")
-
-
-class DiceRollView(discord.ui.View):
-    def __init__(self, user_id: int):
-        super().__init__(timeout=60)
-        self.user_id = user_id
-        self.player_score = 0
-        self.bot_score = 0
-
-    @discord.ui.button(label="Lempar Dadu 🎲", style=discord.ButtonStyle.primary, custom_id="dice:roll")
-    async def roll(self, interaction: discord.Interaction, button: discord.ui.Button):
-        if interaction.user.id != self.user_id:
-            await interaction.response.send_message("❌ Ini bukan sesi game Anda!", ephemeral=True)
-            return
-
-        player_roll = random.randint(1, 6)
-        bot_roll = random.randint(1, 6)
-        dice_emojis = {1: "⚀", 2: "⚁", 3: "⚂", 4: "⚃", 5: "⚄", 6: "⚅"}
-
-        if player_roll > bot_roll:
-            result = "🎉 Anda memenangkan duel dadu ini!"
-            self.player_score += 1
-            color = discord.Color.green()
-        elif bot_roll > player_roll:
-            result = "💀 Bot memenangkan duel dadu ini!"
-            self.bot_score += 1
-            color = discord.Color.red()
-        else:
-            result = "🤝 Hasil Seri!"
-            color = discord.Color.gold()
-
-        embed = discord.Embed(
-            title="🎲 DUEL DADU",
-            description=(
-                f"Anda melempar: {dice_emojis[player_roll]} (**{player_roll}**)\n"
-                f"Bot melempar: {dice_emojis[bot_roll]} (**{bot_roll}**)\n\n"
-                f"### {result}\n\n"
-                f"🏆 **Skor Seri**: Anda `{self.player_score}` - `{self.bot_score}` Bot"
-            ),
-            color=color
-        )
-        await interaction.response.edit_message(embed=embed, view=self)
-
-
-class SlotMachineView(discord.ui.View):
-    def __init__(self, user_id: int):
-        super().__init__(timeout=60)
-        self.user_id = user_id
-        self.credits = 100
-
-    @discord.ui.button(label="Putar Slot 🎰 (Biaya: 10 Kredit)", style=discord.ButtonStyle.success, custom_id="slot:spin")
-    async def spin(self, interaction: discord.Interaction, button: discord.ui.Button):
-        if interaction.user.id != self.user_id:
-            await interaction.response.send_message("❌ Ini bukan sesi game Anda!", ephemeral=True)
-            return
-
-        if self.credits < 10:
-            embed = discord.Embed(
-                title="🎰 MESIN SLOT WIZARD",
-                description="❌ Kredit Anda tidak mencukupi! Anda mendapatkan isi ulang gratis sebesar 100 Kredit.",
-                color=discord.Color.red()
-            )
-            self.credits = 100
-            await interaction.response.edit_message(embed=embed, view=self)
-            return
-
-        self.credits -= 10
-        items = ["🍒", "🍋", "🍊", "🍇", "🔔", "💎", "⭐"]
-        weights = [0.2, 0.2, 0.18, 0.15, 0.12, 0.08, 0.07]
-        reels = random.choices(items, weights=weights, k=3)
-
-        # Calculate winnings
-        if reels[0] == reels[1] == reels[2]:
-            if reels[0] == "💎":
-                win_amount = 250
-                msg = "🏆 MEGA JACKPOT! 💎💎💎 (+250 Kredit)"
-            elif reels[0] == "⭐":
-                win_amount = 150
-                msg = "🌟 SUPER JACKPOT! ⭐⭐⭐ (+150 Kredit)"
-            else:
-                win_amount = 80
-                msg = "🎉 JACKPOT! (+80 Kredit)"
-            self.credits += win_amount
-            color = discord.Color.green()
-        elif reels[0] == reels[1] or reels[1] == reels[2] or reels[0] == reels[2]:
-            win_amount = 20
-            self.credits += win_amount
-            msg = "🟢 Dua Sama! (+20 Kredit)"
-            color = discord.Color.gold()
-        else:
-            msg = "🔴 Tidak ada kecocokan. Coba lagi!"
-            color = discord.Color.red()
-
-        embed = discord.Embed(
-            title="🎰 MESIN SLOT WIZARD",
-            description=(
-                f"╔═══════════╗\n"
-                f"║  {reels[0]}  |  {reels[1]}  |  {reels[2]}  ║\n"
-                f"╚═══════════╝\n\n"
-                f"### {msg}\n\n"
-                f"💳 Sisa Kredit: **{self.credits}**"
-            ),
-            color=color
-        )
-        await interaction.response.edit_message(embed=embed, view=self)
-
-
-class QuickMathView(discord.ui.View):
-    def __init__(self, user_id: int):
-        super().__init__(timeout=60)
-        self.user_id = user_id
-        self.score = 0
-        self.num1 = 0
-        self.num2 = 0
-        self.op = ""
-        self.answer = 0
-        self.generate_question()
-
-    def generate_question(self):
-        self.op = random.choice(["+", "-", "*"])
-        if self.op == "+":
-            self.num1 = random.randint(5, 50)
-            self.num2 = random.randint(5, 50)
-            self.answer = self.num1 + self.num2
-        elif self.op == "-":
-            self.num1 = random.randint(20, 100)
-            self.num2 = random.randint(5, 20)
-            self.answer = self.num1 - self.num2
-        else:
-            self.num1 = random.randint(2, 12)
-            self.num2 = random.randint(2, 10)
-            self.answer = self.num1 * self.num2
-
-        # Clear existing buttons
-        self.clear_items()
-
-        # Generate options (1 correct, 3 wrong)
-        options = {self.answer}
-        while len(options) < 4:
-            offset = random.randint(-15, 15)
-            if offset != 0:
-                options.add(max(1, self.answer + offset))
-
-        # Add button for each option
-        options_list = list(options)
-        random.shuffle(options_list)
-
-        for opt in options_list:
-            btn = discord.ui.Button(
-                label=str(opt),
-                style=discord.ButtonStyle.secondary,
-                custom_id=f"math:opt_{opt}"
-            )
-            btn.callback = self.make_callback(opt)
-            self.add_item(btn)
-
-    def make_callback(self, val):
-        async def callback(interaction: discord.Interaction):
-            if interaction.user.id != self.user_id:
-                await interaction.response.send_message("❌ Ini bukan sesi game Anda!", ephemeral=True)
-                return
-
-            if val == self.answer:
-                self.score += 1
-                self.generate_question()
-                embed = discord.Embed(
-                    title="🧮 TANTANGAN MATEMATIKA CEPAT",
-                    description=(
-                        f"✅ **Benar!** Lanjut ke pertanyaan berikutnya!\n\n"
-                        f"### Pertanyaan: **{self.num1} {self.op} {self.num2} = ?**\n\n"
-                        f"🔥 Beruntun: `{self.score}`"
-                    ),
-                    color=discord.Color.green()
-                )
-                await interaction.response.edit_message(embed=embed, view=self)
-            else:
-                embed = discord.Embed(
-                    title="🧮 GAME OVER!",
-                    description=(
-                        f"❌ Jawaban salah!\n"
-                        f"Persamaan: **{self.num1} {self.op} {self.num2} = {self.answer}** (Anda menjawab **{val}**)\n\n"
-                        f"🏆 Skor Beruntun Akhir: `{self.score}`"
-                    ),
-                    color=discord.Color.red()
-                )
-                self.clear_items()
-                await interaction.response.edit_message(embed=embed, view=self)
-        return callback
-
-
-class RelaxationGamesView(discord.ui.View):
-    def __init__(self):
-        super().__init__(timeout=None)
-
-    @discord.ui.button(
-        label="🎰 Mesin Slot",
-        style=discord.ButtonStyle.primary,
-        custom_id="arcade:slot_machine",
-        row=0
-    )
-    async def play_slot(self, interaction: discord.Interaction, button: discord.ui.Button):
-        view = SlotMachineView(interaction.user.id)
-        embed = discord.Embed(
-            title="🎰 MESIN SLOT WIZARD",
-            description="Klik tombol di bawah untuk memutar slot dan menangkan Jackpot! 💎",
-            color=discord.Color.purple()
-        )
-        await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
-
-    @discord.ui.button(
-        label="🪨 Gunting Batu Kertas",
-        style=discord.ButtonStyle.primary,
-        custom_id="arcade:rps",
-        row=0
-    )
-    async def play_rps(self, interaction: discord.Interaction, button: discord.ui.Button):
-        view = RockPaperScissorsView(interaction.user.id)
-        embed = discord.Embed(
-            title="🪨 SUT-SUT (Rock Paper Scissors)",
-            description="Pilih salah satu senjata Anda di bawah ini untuk melawan Bot!",
-            color=discord.Color.blue()
-        )
-        await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
-
-    @discord.ui.button(
-        label="🔢 Tebak Angka",
-        style=discord.ButtonStyle.primary,
-        custom_id="arcade:guess_number",
-        row=0
-    )
-    async def play_guess(self, interaction: discord.Interaction, button: discord.ui.Button):
-        view = TebakAngkaGameView(interaction.user.id)
-        embed = discord.Embed(
-            title="🔢 TEBAK ANGKA (1-20)",
-            description="Bot sudah memilih angka rahasia dari 1 hingga 20. Pilih tebakanmu di bawah!",
-            color=discord.Color.orange()
-        )
-        await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
-
-    @discord.ui.button(
-        label="🎲 Lempar Dadu",
-        style=discord.ButtonStyle.success,
-        custom_id="arcade:dice_roll",
-        row=1
-    )
-    async def play_dice(self, interaction: discord.Interaction, button: discord.ui.Button):
-        view = DiceRollView(interaction.user.id)
-        embed = discord.Embed(
-            title="🎲 DUEL DADU",
-            description="Lemparkan dadu Anda dan lihat apakah Anda bisa mengalahkan Bot!",
-            color=discord.Color.green()
-        )
-        await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
-
-    @discord.ui.button(
-        label="🪙 Lempar Koin",
-        style=discord.ButtonStyle.success,
-        custom_id="arcade:coin_flip",
-        row=1
-    )
-    async def play_coin(self, interaction: discord.Interaction, button: discord.ui.Button):
-        view = CoinFlipView(interaction.user.id)
-        embed = discord.Embed(
-            title="🪙 LEMPAR KOIN KEBERUNTUNGAN",
-            description="Pilih Kepala atau Ekor!",
-            color=discord.Color.teal()
-        )
-        await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
-
-    @discord.ui.button(
-        label="🧮 Matematika Cepat",
-        style=discord.ButtonStyle.success,
-        custom_id="arcade:quick_math",
-        row=1
-    )
-    async def play_math(self, interaction: discord.Interaction, button: discord.ui.Button):
-        view = QuickMathView(interaction.user.id)
-        embed = discord.Embed(
-            title="🧮 TANTANGAN MATEMATIKA CEPAT",
-            description=(
-                f"Selesaikan persamaan berikut secepatnya!\n\n"
-                f"### Pertanyaan: **{view.num1} {view.op} {view.num2} = ?**"
-            ),
-            color=discord.Color.light_grey()
-        )
-        await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
-
-
-async def send_relaxation_games_embed(channel: discord.TextChannel):
-    """Mengirim embed arena permainan arcade relaksasi"""
-    embed = discord.Embed(
-        title="🎮 WIZARD RELAXATION ARCADE",
-        description=(
-            "✨ **Selamat Datang di Arena Permainan Santai Wizard!** ✨\n\n"
-            "Lepaskan penat dan stres Anda setelah sesi trading yang melelahkan.\n"
-            "Semua game dimainkan secara privat (ephemeral) sehingga tidak mengganggu member lain.\n\n"
-            "▰▰▰▰▰▰** GAME MENANGKAN JACKPOT & SKOR **▰▰▰▰▰▰\n"
-            "● 🎰 **Mesin Slot** - Putar reels dan dapatkan Triple Diamond Jackpot!\n"
-            "● 🪨 **Gunting Batu Kertas** - Uji keberuntungan Anda melawan Bot.\n"
-            "● 🔢 **Tebak Angka** - Tebak angka rahasia (1-20) dengan petunjuk.\n"
-            "● 🎲 **Lempar Dadu** - Lempar dadu dan kumpulkan poin duel.\n"
-            "● 🪙 **Lempar Koin** - Lempar koin keberuntungan kepala atau ekor.\n"
-            "● 🧮 **Matematika Cepat** - Asah otak Anda dengan kuis beruntun.\n"
-            "▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n"
-            "```yaml\n"
-            "Silakan pilih permainan di bawah untuk memulai sesi privat Anda! 🎉\n"
-            "```"
-        ),
-        color=0xff00a0  # Pink neon arcade aesthetic
-    )
-    if channel.guild.me.display_avatar:
-        embed.set_thumbnail(url=channel.guild.me.display_avatar.url)
-    await channel.send(embed=embed, view=RelaxationGamesView())
-
-
-class MusicVideosView(discord.ui.View):
-    def __init__(self):
-        super().__init__(timeout=None)
-        self.add_item(discord.ui.Button(
-            label="Lo-Fi Hip Hop Beats ☕",
-            style=discord.ButtonStyle.link,
-            url="https://www.youtube.com/watch?v=jfKfPfyJRdk"
-        ))
-        self.add_item(discord.ui.Button(
-            label="Synthwave Radio 🌌",
-            style=discord.ButtonStyle.link,
-            url="https://www.youtube.com/watch?v=4xDzrJKXOOY"
-        ))
-        self.add_item(discord.ui.Button(
-            label="Meditation & Focus 🧘",
-            style=discord.ButtonStyle.link,
-            url="https://www.youtube.com/watch?v=F_7PoXitnHM"
-        ))
-        self.add_item(discord.ui.Button(
-            label="Ambient Rain Sounds 🌧️",
-            style=discord.ButtonStyle.link,
-            url="https://www.youtube.com/watch?v=mPZkdNFkNps"
-        ))
-        self.add_item(discord.ui.Button(
-            label="Trading Focus Beats 📈",
-            style=discord.ButtonStyle.link,
-            url="https://www.youtube.com/watch?v=5qap5aO4i9A"
-        ))
-
-
-async def send_music_videos_embed(channel: discord.TextChannel):
-    """Mengirim embed playlist musik dan video relaksasi"""
-    embed = discord.Embed(
-        title="🎵 WIZARD MUSIC & VIDEOS RELAXATION",
-        description=(
-            "✨ **Pusat Musik & Relaksasi Khusus Anggota Premium Wizard!** ✨\n\n"
-            "Mendengarkan musik yang tepat dapat membantu menjaga fokus, menenangkan pikiran, "
-            "dan meningkatkan produktivitas saat mengamati grafik pasar.\n\n"
-            "Kami telah menyusun beberapa playlist terbaik untuk menemani aktivitas trading Anda:\n\n"
-            "▰▰▰▰▰** PLAYLIST PILIHAN UNTUK TRADER **▰▰▰▰▰\n"
-            "● ☕ **Lo-Fi Hip Hop Beats** - Santai, menenangkan, dan membantu fokus jangka panjang.\n"
-            "● 🌌 **Synthwave Radio** - Ketukan retro elektronik berenergi tinggi namun santai.\n"
-            "● 🧘 **Meditation & Focus** - Gelombang binaural untuk meditasi dan ketenangan pikiran.\n"
-            "● 🌧️ **Ambient Rain Sounds** - Suara rintik hujan alami untuk suasana yang damai.\n"
-            "● 📈 **Trading Focus Beats** - Musik instrumental khusus untuk menemani riset grafik.\n"
-            "▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n"
-            "```yaml\n"
-            "Silakan klik salah satu tombol di bawah untuk membuka playlist di browser atau aplikasi YouTube Anda! 🎧\n"
-            "```"
-        ),
-        color=0x1dd1a1  # Mint green positive aesthetic
-    )
-    if channel.guild.me.display_avatar:
-        embed.set_thumbnail(url=channel.guild.me.display_avatar.url)
-    await channel.send(embed=embed, view=MusicVideosView())
 
 # --- wizard-toolkits view ---
 class WizardToolkitsView(discord.ui.View):
@@ -6337,7 +5820,7 @@ class KontrolPenggunaView(discord.ui.View):
 
             for user_id, username, status, sub_type, expiry_str in users:
                 emoji = "👤"
-                color = discord.Color.blurple()
+                color = discord.Color(COLOR_VIOLET)
                 extra = ""
 
                 # Penentuan warna & ikon per status
@@ -6347,14 +5830,14 @@ class KontrolPenggunaView(discord.ui.View):
                     extra = "▸ **Tipe:** Bulanan"
                 elif status == "WizardMemberTahunan":
                     emoji = "🏆"
-                    color = discord.Color.purple()
+                    color = discord.Color(COLOR_VIOLET)
                     extra = "▸ **Tipe:** Tahunan"
                 elif status == "Admin":
                     emoji = "🛡️"
                     color = discord.Color.red()
                 elif status == "member":
                     emoji = "🔹"
-                    color = discord.Color.teal()
+                    color = discord.Color(COLOR_CYAN)
                 elif status == "PendingVerification":
                     emoji = "⏳"
                     color = discord.Color.greyple()
@@ -6398,7 +5881,7 @@ class KontrolPenggunaView(discord.ui.View):
                 desc = "\n\n".join(u[0] for u in page_users)
                 # Ambil warna dominan
                 colors = [u[1] for u in page_users]
-                color = colors[0] if len(set(colors)) == 1 else discord.Color.blurple()
+                color = colors[0] if len(set(colors)) == 1 else discord.Color(COLOR_VIOLET)
 
                 embed = discord.Embed(
                     title="📋 DAFTAR PENGGUNA TERDAFTAR",
@@ -6821,7 +6304,7 @@ class ExportDataSelectView(discord.ui.View):
             embed = discord.Embed(
                 title="⬈ Ekspor Data Berhasil",
                 description=f"📁 Tabel `{table}` telah berhasil diekspor ke file CSV.",
-                color=discord.Color.green(),
+                color=discord.Color(COLOR_GREEN),
                 timestamp=datetime.now()
             )
             embed.set_footer(text=f"Dieksekusi oleh {interaction.user.display_name}")
@@ -6890,7 +6373,7 @@ class ExportDataSelectView(discord.ui.View):
         embed = discord.Embed(
             title="📦 Ekspor Semua Data Berhasil",
             description=f"✅ {exported_count} tabel berhasil diekspor ke dalam satu file ZIP.",
-            color=discord.Color.blue(),
+            color=discord.Color(COLOR_CYAN),
             timestamp=datetime.now()
         )
         embed.set_footer(text=f"Dieksekusi oleh {interaction.user.display_name}")
@@ -7362,7 +6845,7 @@ class PerkenalanModal(Modal, title="🏆 PERKENALAN DIRI MountAlgo 🚀"):
                                  "- Gunakan thread untuk berinteraksi\n"
                                  "- Jelaskan trading style Anda\n"
                                  "- Jangan lupa baca rules!\n",
-                    color=discord.Color.green()
+                    color=discord.Color(COLOR_GREEN)
                 ),
                 ephemeral=True
             )
@@ -7452,7 +6935,7 @@ class DiskusiModal(Modal, title="📝 Buat Diskusi Baru"):
             # Buat embed untuk pesan pembuka
             embed = discord.Embed(
                 title=f"🚀 DISKUSI BARU: {self.topic.value}",
-                color=discord.Color.blue()
+                color=discord.Color(COLOR_CYAN)
             )
             
             embed.add_field(
@@ -7795,7 +7278,7 @@ class UpgradeUserModal(discord.ui.Modal, title="⤴️ Upgrade Pengguna ke Wizar
                     f"🏷️ **Status Baru:** {status}\n"
                     f"📅 **Masa Berlaku:** {expiry.split('T')[0]}\n"
                 ),
-                color=discord.Color.gold() if sub_type == "Bulanan" else discord.Color.purple()
+                color=discord.Color.gold() if sub_type == "Bulanan" else discord.Color(COLOR_VIOLET)
             )
             embed.set_footer(text="MountAlgo Membership System")
             await interaction.response.send_message(embed=embed, ephemeral=True)
@@ -7814,7 +7297,7 @@ class UpgradeUserModal(discord.ui.Modal, title="⤴️ Upgrade Pengguna ke Wizar
                         f"• 🧠 Wizard Analisis\n\n"
                         f"Terima kasih telah menjadi bagian dari **MountAlgo Premium Member**!"
                     ),
-                    color=discord.Color.gold() if sub_type == "Bulanan" else discord.Color.purple()
+                    color=discord.Color.gold() if sub_type == "Bulanan" else discord.Color(COLOR_VIOLET)
                 )
                 await member.send(embed=dm_embed)
             except discord.Forbidden:
@@ -8510,7 +7993,7 @@ class AnalysisModal(Modal, title="Kirim Analisis"):
         embed = discord.Embed(
             title=title,
             description=description,
-            color=discord.Color.blue(),
+            color=discord.Color(COLOR_CYAN),
             timestamp=datetime.now()
         )
         embed.set_footer(text=f"Dikirim oleh {interaction.user.display_name}")
@@ -8637,7 +8120,7 @@ class WizardEmbedModal(Modal, title="Kirim Embed ke #wizard-strategy"):
         embed = discord.Embed(
             title=title,
             description=description,
-            color=discord.Color.teal(),
+            color=discord.Color(COLOR_CYAN),
             timestamp=datetime.now()
         )
         embed.set_footer(text=f"Dikirim oleh {interaction.user.display_name}")
@@ -8758,7 +8241,7 @@ class AssetPriceModal(Modal, title="📊 Analisis Institusional Aset"):
                 source = cache_info[symbol_key].get("source", "unknown").replace("_try_", "")
 
             # Tentukan warna embed
-            color = discord.Color.green() if (change_24h or 0) >= 0 else discord.Color.red()
+            color = discord.Color(COLOR_GREEN) if (change_24h or 0) >= 0 else discord.Color.red()
 
             # Format harga
             price_str = format_price(price)
@@ -8811,12 +8294,12 @@ class ServerBuilder:
                 role = discord.utils.get(guild.roles, name=role_name)
                 if not role:
                     color = {
-                        "Member": discord.Color.blue(),
+                        "Member": discord.Color(COLOR_CYAN),
                         "WizardMemberBulanan": discord.Color.gold(),
-                        "WizardMemberTahunan": discord.Color.purple(),
+                        "WizardMemberTahunan": discord.Color(COLOR_VIOLET),
                         "Admin": discord.Color.red(),
-                        "Unverified": discord.Color.dark_grey(),
-                        "Muted": discord.Color.dark_grey()
+                        "Unverified": discord.Color(COLOR_DARK),
+                        "Muted": discord.Color(COLOR_DARK)
                     }.get(role_name, discord.Color.default())
                     
                     perms = discord.Permissions(administrator=True) if role_name == "Admin" else discord.Permissions.none()
@@ -8984,9 +8467,7 @@ class ServerBuilder:
             "wizard-lounge-chat": send_wizard_lounge_embed,
             "kontrol-pengguna": send_kontrol_pengguna_embed,
             "kontrol-admin": send_kontrol_admin_embed,
-            "wizard-toolkits": send_wizard_toolkits_embed,
-            "relaxation-games": send_relaxation_games_embed,
-            "music-videos": send_music_videos_embed
+            "wizard-toolkits": send_wizard_toolkits_embed
         }
         
         for channel_name, init_func in init_functions.items():
@@ -9089,10 +8570,6 @@ class ServerBuilder:
             await send_kontrol_admin_embed(channel_map["kontrol-admin"])
         if "wizard-toolkits" in channel_map:
             await send_wizard_toolkits_embed(channel_map["wizard-toolkits"])
-        if "relaxation-games" in channel_map:
-            await send_relaxation_games_embed(channel_map["relaxation-games"])
-        if "music-videos" in channel_map:
-            await send_music_videos_embed(channel_map["music-videos"])
       
 # ===================== EVENT HANDLER & COMMAND =====================
 # Pertama-tama setup database sebelum bot start
@@ -9261,8 +8738,6 @@ async def on_ready():
     bot.add_view(KontrolAdminView())
     bot.add_view(WizardToolkitsView())
     bot.add_view(ThreadManagementView())
-    bot.add_view(RelaxationGamesView())
-    bot.add_view(MusicVideosView())
 
     # =====================
     # 5️⃣ SETUP THREAD ANALISIS
@@ -9290,7 +8765,7 @@ async def on_ready():
             embed = discord.Embed(
                 title="📊 MountAlgo SYSTEM STATUS",
                 description="Laporan otomatis saat bot aktif sepenuhnya.",
-                color=discord.Color.green(),
+                color=discord.Color(COLOR_GREEN),
                 timestamp=datetime.now(timezone.utc)
             )
             embed.add_field(name="🏠 Server", value=f"{guild.name}", inline=True)
@@ -9483,7 +8958,7 @@ async def on_member_update(before: discord.Member, after: discord.Member):
                         f"🗓️ Berlaku hingga: **{expiry.split('T')[0]}**\n"
                         f"Terima kasih telah mempercayai layanan premium kami! 💎"
                     ),
-                    color=discord.Color.gold() if sub_type == "Bulanan" else discord.Color.purple()
+                    color=discord.Color.gold() if sub_type == "Bulanan" else discord.Color(COLOR_VIOLET)
                 )
                 await after.send(embed=embed)
             except discord.Forbidden:
@@ -9527,7 +9002,7 @@ async def on_member_update(before: discord.Member, after: discord.Member):
                             "Akses Anda kini kembali ke status **member biasa**.\n\n"
                             "Anda masih dapat memperpanjang kapan pun untuk kembali menikmati fitur premium. 💎"
                         ),
-                        color=discord.Color.dark_grey()
+                        color=discord.Color(COLOR_DARK)
                     )
                     await after.send(embed=dm_embed)
                 except discord.Forbidden:
@@ -9957,12 +9432,12 @@ async def send_roadmap_trader(channel: discord.TextChannel):
             "|    Karir Trading Jelas dan Kokoh   |\n"
             "+====================================+\n"
             "```"),
-        color=0x5134ff
+        color=COLOR_VIOLET
     )
     
     # Embed 2: Step 1
     embed2 = discord.Embed(
-        color=0x2ecc71
+        color=COLOR_GREEN
     )
     embed2.add_field(
         name="➊ ILMU DASAR SEORANG TRADER",
@@ -9985,7 +9460,7 @@ async def send_roadmap_trader(channel: discord.TextChannel):
 
     # Embed 3: Step 2
     embed3 = discord.Embed(
-        color=0x2ecc71
+        color=COLOR_GREEN
     )
     embed3.add_field(
         name="➋ PSIKOLOGI DAN MENTAL TRADER",
@@ -10006,7 +9481,7 @@ async def send_roadmap_trader(channel: discord.TextChannel):
 
     # Embed 4: Step 3
     embed4 = discord.Embed(
-        color=0x2ecc71
+        color=COLOR_GREEN
     )
     embed4.add_field(
         name="➌ RISK REWARD DAN MONEY MANAGEMENT",
@@ -10026,7 +9501,7 @@ async def send_roadmap_trader(channel: discord.TextChannel):
 
     # Embed 5: Step 4
     embed5 = discord.Embed(
-        color=0x2ecc71
+        color=COLOR_GREEN
     )
     embed5.add_field(
         name="➍ STRATEGI OPEN POSISI",
@@ -10049,7 +9524,7 @@ async def send_roadmap_trader(channel: discord.TextChannel):
     
     # Embed 6: Step 5
     embed6 = discord.Embed(
-        color=0x2ecc71
+        color=COLOR_GREEN
     )
     embed6.add_field(
         name="➎ SESI AWAL TRADE (FASE TOURNAMENT)",
@@ -10075,7 +9550,7 @@ async def send_roadmap_trader(channel: discord.TextChannel):
     
     # Embed 7: Step 6
     embed7 = discord.Embed(
-        color=0x2ecc71
+        color=COLOR_GREEN
     )
     embed7.add_field(
         name="➏ KOMITMEN PADA PORTOFOLIO PRIBADI",
@@ -10093,7 +9568,7 @@ async def send_roadmap_trader(channel: discord.TextChannel):
     
     # Embed 8: Step 7
     embed8 = discord.Embed(
-        color=0x2ecc71
+        color=COLOR_GREEN
     )
     embed8.add_field(
         name="➐ KOMITMEN DAN KONSISTENSI",
@@ -10113,7 +9588,7 @@ async def send_roadmap_trader(channel: discord.TextChannel):
 
     # Embed 9: Step 8
     embed9 = discord.Embed(
-        color=0x2ecc71
+        color=COLOR_GREEN
     )
     embed9.add_field(
         name="➑ AKUMULASI ASET SIGNIFIKAN",
@@ -10133,7 +9608,7 @@ async def send_roadmap_trader(channel: discord.TextChannel):
 
     # Embed 10: Step 9
     embed10 = discord.Embed(
-        color=0x2ecc71
+        color=COLOR_GREEN
     )
     embed10.add_field(
         name="➒ GUNAKAN ASET UNTUK KEBAIKAN",
@@ -10160,7 +9635,7 @@ async def send_roadmap_trader(channel: discord.TextChannel):
 
     # Embed 11: Step 10 & 9
     embed11 = discord.Embed(
-        color=0x5134ff
+        color=COLOR_VIOLET
     )
     embed11.add_field(
         name="➓ MENINGGAL DALAM BAHAGIA & KEDAMAIAN ABADI",
@@ -10193,7 +9668,7 @@ async def send_roadmap_trader(channel: discord.TextChannel):
     
 @bot.command()
 async def help(ctx):
-    embed = discord.Embed(title="Daftar Perintah Bot", color=0x3498db)
+    embed = discord.Embed(title="Daftar Perintah Bot", color=COLOR_CYAN)
     embed.add_field(name="!setupserver", value="Setup ulang seluruh struktur server (ADMIN ONLY)", inline=False)
     embed.add_field(name="Interaksi", value="Gunakan tombol di channel kontrol-pengguna/kontrol-admin untuk fitur lainnya.", inline=False)
     await ctx.send(embed=embed)
