@@ -4219,6 +4219,18 @@ async def send_kontrol_admin_embed(channel: discord.TextChannel):
         inline=False
     )
     embed.add_field(
+        name="❑ MANAJEMEN PEMBAYARAN & DONASI",
+        value=(
+            "```yaml\n"
+            "● Aktif/nonaktifkan tombol DANA\n"
+            "● Aktif/nonaktifkan tombol Crypto (USDC)\n"
+            "● Aktif/nonaktifkan tombol Bank/Kartu\n"
+            "● Aktif/nonaktifkan tombol Donasi\n"
+            "```"
+        ),
+        inline=False
+    )
+    embed.add_field(
         name="⬈ PERHATIAN",
         value=(
             "```yaml\n"
