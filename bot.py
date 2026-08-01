@@ -112,6 +112,8 @@ API_KEYS = {
     "DANA_TAHUNAN_LINK": os.getenv("DANA_TAHUNAN_LINK"),
     "USDC_BULANAN_LINK": os.getenv("USDC_BULANAN_LINK"),
     "USDC_TAHUNAN_LINK": os.getenv("USDC_TAHUNAN_LINK"),
+    "CARD_BULANAN_LINK": os.getenv("CARD_BULANAN_LINK"),
+    "CARD_TAHUNAN_LINK": os.getenv("CARD_TAHUNAN_LINK"),
     "DONATION_LINK": os.getenv("DONATION_LINK"),
     "USDT_WALLET": os.getenv("USDT_WALLET"),
     "BTC_WALLET": os.getenv("BTC_WALLET"),
@@ -156,6 +158,8 @@ DANA_BULANAN_LINK = API_KEYS["DANA_BULANAN_LINK"]
 DANA_TAHUNAN_LINK = API_KEYS["DANA_TAHUNAN_LINK"]
 USDC_BULANAN_LINK = API_KEYS["USDC_BULANAN_LINK"]
 USDC_TAHUNAN_LINK = API_KEYS["USDC_TAHUNAN_LINK"]
+CARD_BULANAN_LINK = API_KEYS["CARD_BULANAN_LINK"]
+CARD_TAHUNAN_LINK = API_KEYS["CARD_TAHUNAN_LINK"]
 DONATION_LINK = API_KEYS["DONATION_LINK"]
 DONATION_ACTIVE = False
 USDT_WALLET = API_KEYS["USDT_WALLET"]
@@ -4266,6 +4270,11 @@ class PaymentSelect(discord.ui.Select):
                 label="🪙 Bayar via USDC (Crypto)",
                 value="crypto",
                 description="Tampilkan opsi pembayaran USDC (Crypto)"
+            ),
+            discord.SelectOption(
+                label="💳 Transfer Bank / Kartu",
+                value="card",
+                description="Tampilkan opsi pembayaran via Transfer Bank / Kartu"
             )
         ]
         super().__init__(
@@ -4286,12 +4295,17 @@ class PaymentSelect(discord.ui.Select):
         dana_tahunan = DANA_TAHUNAN_LINK or "https://link.dana.id/qr/your_yearly_qr_id"
         usdc_bulanan = USDC_BULANAN_LINK or "https://link.usdc.id/qr/your_monthly_usdc_id"
         usdc_tahunan = USDC_TAHUNAN_LINK or "https://link.usdc.id/qr/your_yearly_usdc_id"
+        card_bulanan = CARD_BULANAN_LINK or "https://link.card.id/your_monthly_card_id"
+        card_tahunan = CARD_TAHUNAN_LINK or "https://link.card.id/your_yearly_card_id"
 
         # Bersihkan field pembayaran sebelumnya jika ada
-        for i, field in enumerate(new_embed.fields):
-            if field.name in ["📱 DETAIL PEMBAYARAN DANA", "🪙 DETAIL PEMBAYARAN CRYPTO"]:
+        for i in range(len(new_embed.fields) - 1, -1, -1):
+            if new_embed.fields[i].name in [
+                "📱 DETAIL PEMBAYARAN DANA",
+                "🪙 DETAIL PEMBAYARAN CRYPTO",
+                "💳 DETAIL PEMBAYARAN BANK/KARTU"
+            ]:
                 new_embed.remove_field(i)
-                break
 
         # Buat view baru yang melestarikan Select dropdown ini
         view = discord.ui.View(timeout=None)
@@ -4344,6 +4358,30 @@ class PaymentSelect(discord.ui.Select):
             view.add_item(discord.ui.Button(
                 label="⬈ Bayar USDC Tahunan",
                 url=usdc_tahunan,
+                style=discord.ButtonStyle.link
+            ))
+        elif self.values[0] == "card":
+            new_embed.add_field(
+                name="💳 DETAIL PEMBAYARAN BANK/KARTU",
+                value=(
+                    f"▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰\n"
+                    f"➩ **Paket Wizard Bulanan:**\nSilakan bayar menggunakan tombol **Bayar Card Bulanan** di bawah.\n\n"
+                    f"➩ **Paket Wizard Tahunan:**\nSilakan bayar menggunakan tombol **Bayar Card Tahunan** di bawah.\n\n"
+                    f"💡 *Pembayaran mendukung kartu kredit, kartu debit, dan transfer bank otomatis.*\n"
+                    f"💡 *Setelah pembayaran berhasil, kirim bukti transfer ke Admin untuk konfirmasi.*\n"
+                    f"▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰"
+                ),
+                inline=False
+            )
+            # Tambahkan tombol Link Card untuk Bulanan dan Tahunan
+            view.add_item(discord.ui.Button(
+                label="⬈ Bayar Card Bulanan",
+                url=card_bulanan,
+                style=discord.ButtonStyle.link
+            ))
+            view.add_item(discord.ui.Button(
+                label="⬈ Bayar Card Tahunan",
+                url=card_tahunan,
                 style=discord.ButtonStyle.link
             ))
 
@@ -4661,24 +4699,6 @@ class VerifView(discord.ui.View):
     async def donation_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
         user = interaction.user
         guild = interaction.guild
-        user_id = user.id
-
-        # Update database with status WizardMemberBulanan
-        sub_type = "bulanan"
-        status = "WizardMemberBulanan"
-        days = 30
-        expiry = (datetime.utcnow() + timedelta(days=days)).isoformat()
-
-        # Update database
-        await Database.update_user_status(
-            user_id=user_id,
-            status=status,
-            subscription_type=sub_type.lower(),
-            expiry_date=expiry
-        )
-
-        # Apply roles in discord
-        await apply_user_roles(user, status)
 
         # Send confirmation and donation link
         donation_link = DONATION_LINK or "https://saweria.co/mountalgo"
@@ -4689,9 +4709,9 @@ class VerifView(discord.ui.View):
                 f"Sesuai dengan ketentuan kami, Anda berhak mendapatkan status **Wizard Member Bulanan** secara **GRATIS**! 🎉\n\n"
                 f"🔗 **Link Pembayaran/Donasi (Saweria/Payment Link):**\n"
                 f"[Klik di sini untuk melakukan Donasi]({donation_link})\n\n"
-                f"⚡ **Status Anda telah ditingkatkan menjadi Wizard Member!**\n"
-                f"Masa aktif berlaku selama **30 hari**.\n\n"
-                f"Silakan kunjungi channel-channel premium kami di kategori **🧬|WIZARD|🚀🚀**."
+                f"⚠️ **PENTING:** Setelah melakukan donasi, silakan kirim bukti transfer/pembayaran Anda ke **Admin** "
+                f"secara manual untuk mendapatkan peran/role **Wizard Member** gratis Anda!\n\n"
+                f"Terima kasih atas kontribusi Anda dalam membantu menjaga kelangsungan komunitas kami!"
             ),
             color=discord.Color.gold()
         )
@@ -4702,7 +4722,7 @@ class VerifView(discord.ui.View):
         log_channel = discord.utils.get(guild.text_channels, name="laporan")
         if log_channel:
             await log_channel.send(
-                f"🎁 {user.mention} telah mengklaim **Wizard Member Gratis** via tombol Donasi!"
+                f"🎁 {user.mention} telah mengklik tombol donasi untuk mengklaim **Wizard Member Gratis** (Menunggu Verifikasi Manual Admin)."
             )
 
 # --- Bantuan ---
