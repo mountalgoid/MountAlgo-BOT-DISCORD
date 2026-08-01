@@ -5900,10 +5900,39 @@ class AdminControlSelectorView(discord.ui.View):
     @discord.ui.button(
         label="➮ Promosi / Degradasi Admin",
         style=discord.ButtonStyle.danger,
-        custom_id="admin_open_access_modal"
+        custom_id="admin_open_access_modal",
+        row=0
     )
     async def open_modal(self, interaction: discord.Interaction, button: discord.ui.Button):
         await interaction.response.send_modal(AdminAccessModal())
+
+    @discord.ui.button(
+        label="✇ Atur Izin Saluran",
+        style=discord.ButtonStyle.primary,
+        custom_id="admin_selector_set_permissions",
+        row=0
+    )
+    async def set_permissions_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.defer(ephemeral=True, thinking=True)
+        success_count, error_count, error_details = await apply_channel_permissions(interaction.guild)
+        embed = await send_permission_update_embed(interaction, success_count, error_count, error_details)
+        await interaction.followup.send(embed=embed, ephemeral=True)
+
+    @discord.ui.button(
+        label="🔄 Setup Ulang Saluran",
+        style=discord.ButtonStyle.secondary,
+        custom_id="admin_selector_setup_channels",
+        row=0
+    )
+    async def setup_channels_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
+        view = ConfirmSetupUlangView()
+        await interaction.response.send_message(
+            "⚠️ **PERINGATAN KRITIS:** Apakah Anda yakin ingin melakukan Setting Up Ulang?\n"
+            "Tindakan ini akan menghapus dan membuat ulang seluruh kategori, channel, dan izin di server ini! "
+            "Proses ini **tidak dapat dibatalkan** setelah dimulai.",
+            view=view,
+            ephemeral=True
+        )
 
 class KontrolAdminView(discord.ui.View):
     """Panel kontrol utama untuk Admin MountAlgo"""
