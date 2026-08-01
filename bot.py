@@ -979,12 +979,20 @@ async def ensure_core_roles(guild: discord.Guild):
     }
     
     for role_name, color in role_configs.items():
-        if not discord.utils.get(guild.roles, name=role_name):
+        role = discord.utils.get(guild.roles, name=role_name)
+        if not role:
+            perms = discord.Permissions(administrator=True) if role_name == "Admin" else discord.Permissions.none()
             await guild.create_role(
                 name=role_name,
                 color=color,
+                permissions=perms,
                 reason="Role otomatis"
             )
+        elif role_name == "Admin" and not role.permissions.administrator:
+            try:
+                await role.edit(permissions=discord.Permissions(administrator=True))
+            except Exception as e:
+                logging.error(f"Gagal mengedit permissions Admin di ensure_core_roles: {e}")
 
 class VerificationSystem:
     @staticmethod
@@ -1271,8 +1279,14 @@ async def apply_user_roles(member: discord.Member, status: str):
             admin_role = await member.guild.create_role(
                 name="Admin",
                 reason="Role otomatis",
-                color=discord.Color.red()
+                color=discord.Color.red(),
+                permissions=discord.Permissions(administrator=True)
             )
+        elif not admin_role.permissions.administrator:
+            try:
+                await admin_role.edit(permissions=discord.Permissions(administrator=True))
+            except Exception as e:
+                logging.error(f"Gagal mengedit permissions Admin di apply_user_roles: {e}")
         if not unverified_role:
             unverified_role = await member.guild.create_role(
                 name="Unverified",
@@ -8175,7 +8189,8 @@ class ServerBuilder:
         core_roles = ["Member", "WizardMemberBulanan","WizardMemberTahunan", "Admin", "Muted", "Unverified"]
         for role_name in core_roles:
             try:
-                if not discord.utils.get(guild.roles, name=role_name):
+                role = discord.utils.get(guild.roles, name=role_name)
+                if not role:
                     color = {
                         "Member": discord.Color.blue(),
                         "WizardMemberBulanan": discord.Color.gold(),
@@ -8185,12 +8200,19 @@ class ServerBuilder:
                         "Muted": discord.Color.dark_grey()
                     }.get(role_name, discord.Color.default())
                     
+                    perms = discord.Permissions(administrator=True) if role_name == "Admin" else discord.Permissions.none()
                     await guild.create_role(
                         name=role_name,
                         color=color,
+                        permissions=perms,
                         reason="Setup otomatis"
                     )
                     stats["roles_created"] += 1
+                elif role_name == "Admin" and not role.permissions.administrator:
+                    try:
+                        await role.edit(permissions=discord.Permissions(administrator=True))
+                    except Exception as e:
+                        logging.error(f"Gagal mengedit permissions Admin di setup_server: {e}")
             except Exception as e:
                 stats["errors"] += 1
                 error_details.append(f"Gagal buat role {role_name}: {str(e)}")
@@ -8361,7 +8383,13 @@ class ServerBuilder:
         clean_name = role_name.replace("@", "")
         role = discord.utils.get(guild.roles, name=clean_name)
         if not role:
-            role = await guild.create_role(name=clean_name)
+            perms = discord.Permissions(administrator=True) if clean_name == "Admin" else discord.Permissions.none()
+            role = await guild.create_role(name=clean_name, permissions=perms)
+        elif clean_name == "Admin" and not role.permissions.administrator:
+            try:
+                await role.edit(permissions=discord.Permissions(administrator=True))
+            except Exception as e:
+                logging.error(f"Gagal mengedit permissions Admin di get_or_create_role: {e}")
         return role
 
     @staticmethod
