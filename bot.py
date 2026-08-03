@@ -8900,8 +8900,7 @@ async def on_member_join(member: discord.Member):
 async def on_member_update(before: discord.Member, after: discord.Member):
     """
     Fungsi ini memeriksa perubahan role user secara real-time.
-    Jika ada perubahan pada status WizardMember (Bulanan/Tahunan),
-    bot akan otomatis memperbarui data di database.
+    Bot akan otomatis menyelaraskan status user di database dengan role barunya.
     """
 
     try:
@@ -8928,72 +8927,79 @@ async def on_member_update(before: discord.Member, after: discord.Member):
             f"[on_member_update] {after.display_name} → Tambah: {added_roles}, Hapus: {removed_roles}"
         )
 
-        # Ambil role penting
-        role_bulanan = "WizardMemberBulanan"
-        role_tahunan = "WizardMemberTahunan"
-        role_member = "Member"
+        # Tentukan status dari roles saat ini
+        role_names = [r.name for r in after.roles]
+        resolved_status = "PendingVerification"
+        if "Admin" in role_names:
+            resolved_status = "Admin"
+        elif "WizardMemberTahunan" in role_names:
+            resolved_status = "WizardMemberTahunan"
+        elif "WizardMemberBulanan" in role_names:
+            resolved_status = "WizardMemberBulanan"
+        elif "Member" in role_names:
+            resolved_status = "member"
 
-        # Deteksi upgrade
-        if role_bulanan in added_roles or role_tahunan in added_roles:
-            sub_type = "Bulanan" if role_bulanan in added_roles else "Tahunan"
-            status = "WizardMemberBulanan" if sub_type == "Bulanan" else "WizardMemberTahunan"
-            days = 30 if sub_type == "Bulanan" else 365
-            expiry = (datetime.utcnow() + timedelta(days=days)).isoformat()
+        # Dapatkan data user saat ini dari database
+        user_data = await Database.get_user_data(user_id)
 
-            # Update database
+        if not user_data:
+            new_sub_type = None
+            new_expiry = None
+            if resolved_status == "WizardMemberBulanan":
+                new_sub_type = "bulanan"
+                new_expiry = (datetime.utcnow() + timedelta(days=30)).isoformat()
+            elif resolved_status == "WizardMemberTahunan":
+                new_sub_type = "tahunan"
+                new_expiry = (datetime.utcnow() + timedelta(days=365)).isoformat()
+
+            await Database.add_user(
+                user_id=user_id,
+                username=after.name,
+                status=resolved_status,
+                subscription_type=new_sub_type,
+                expiry_date=new_expiry
+            )
+            logging.info(f"[on_member_update] User {after.display_name} baru ditambahkan ke database dengan status {resolved_status}.")
+            return
+
+        db_status = user_data[2]
+        db_sub_type = user_data[3]
+        db_expiry = user_data[4]
+
+        if resolved_status != db_status:
+            new_sub_type = None
+            new_expiry = None
+            if resolved_status == "WizardMemberBulanan":
+                new_sub_type = "bulanan"
+                new_expiry = db_expiry if (db_status == "WizardMemberBulanan" and db_expiry) else (datetime.utcnow() + timedelta(days=30)).isoformat()
+            elif resolved_status == "WizardMemberTahunan":
+                new_sub_type = "tahunan"
+                new_expiry = db_expiry if (db_status == "WizardMemberTahunan" and db_expiry) else (datetime.utcnow() + timedelta(days=365)).isoformat()
+
             await Database.update_user_status(
                 user_id=user_id,
-                status=status,
-                subscription_type=sub_type.lower(),
-                expiry_date=expiry
+                status=resolved_status,
+                subscription_type=new_sub_type,
+                expiry_date=new_expiry
             )
 
             # Kirim DM notifikasi ke user
             try:
-                embed = discord.Embed(
-                    title="🎉 Selamat! Anda Diupgrade",
-                    description=(
-                        f"Halo {after.display_name},\n\n"
-                        f"Anda telah diupgrade menjadi **{sub_type} Wizard Member** di server **{guild.name}**.\n\n"
-                        f"🗓️ Berlaku hingga: **{expiry.split('T')[0]}**\n"
-                        f"Terima kasih telah mempercayai layanan premium kami! 💎"
-                    ),
-                    color=discord.Color.gold() if sub_type == "Bulanan" else discord.Color(COLOR_VIOLET)
-                )
-                await after.send(embed=embed)
-            except discord.Forbidden:
-                logging.warning(f"Tidak dapat mengirim DM ke {after.display_name} (DM tertutup).")
-
-            # Kirim log ke channel admin
-            admin_log = discord.utils.get(guild.text_channels, name="laporan")
-            if admin_log:
-                await admin_log.send(
-                    f"✅ **{after.display_name}** diupgrade ke **{status}** (berlaku sampai {expiry.split('T')[0]})."
-                )
-
-            logging.info(
-                f"[on_member_update] {after.display_name} (ID: {user_id}) diupgrade ke {status}"
-            )
-
-        # Deteksi downgrade (hilang role Wizard)
-        elif (role_bulanan in removed_roles or role_tahunan in removed_roles) and role_member not in after_roles:
-            # Cek apakah user masih punya role Wizard lainnya
-            has_any_Wizard = any(r in after_roles for r in [role_bulanan, role_tahunan])
-            if not has_any_Wizard:
-                # Downgrade ke member
-                member_role = discord.utils.get(guild.roles, name="Member")
-                if member_role:
-                    await after.add_roles(member_role, reason="Langganan WizardMember berakhir")
-
-                await Database.update_user_status(
-                    user_id=user_id,
-                    status="member",
-                    subscription_type=None,
-                    expiry_date=None
-                )
-
-                # Kirim DM notifikasi
-                try:
+                if resolved_status in ["WizardMemberBulanan", "WizardMemberTahunan"]:
+                    sub_title = "Bulanan" if resolved_status == "WizardMemberBulanan" else "Tahunan"
+                    embed = discord.Embed(
+                        title="🎉 Selamat! Anda Diupgrade",
+                        description=(
+                            f"Halo {after.display_name},\n\n"
+                            f"Anda telah diupgrade menjadi **{sub_title} Wizard Member** di server **{guild.name}**.\n\n"
+                            f"🗓️ Berlaku hingga: **{new_expiry.split('T')[0]}**\n"
+                            f"Terima kasih telah mempercayai layanan premium kami! 💎"
+                        ),
+                        color=discord.Color.gold() if sub_title == "Bulanan" else discord.Color(COLOR_VIOLET)
+                    )
+                    await after.send(embed=embed)
+                elif db_status in ["WizardMemberBulanan", "WizardMemberTahunan"] and resolved_status == "member":
+                    # Downgrade dari Wizard ke Member
                     dm_embed = discord.Embed(
                         title="⚠️ Langganan Berakhir",
                         description=(
@@ -9005,19 +9011,60 @@ async def on_member_update(before: discord.Member, after: discord.Member):
                         color=discord.Color(COLOR_DARK)
                     )
                     await after.send(embed=dm_embed)
-                except discord.Forbidden:
-                    logging.warning(f"Tidak dapat kirim DM downgrade ke {after.display_name}.")
+                elif resolved_status == "Admin":
+                    dm_embed = discord.Embed(
+                        title="👑 Akses Admin Diaktifkan",
+                        description=(
+                            f"Halo {after.display_name},\n\n"
+                            f"Anda sekarang memiliki peran **Admin** di server **{guild.name}**."
+                        ),
+                        color=discord.Color(COLOR_VIOLET)
+                    )
+                    await after.send(dm_embed)
+                elif resolved_status == "member" and db_status == "PendingVerification":
+                    dm_embed = discord.Embed(
+                        title="✅ Verifikasi Selesai",
+                        description=(
+                            f"Halo {after.display_name},\n\n"
+                            f"Verifikasi Anda selesai! Anda sekarang adalah **Member** resmi di server **{guild.name}**."
+                        ),
+                        color=discord.Color(COLOR_GREEN)
+                    )
+                    await after.send(dm_embed)
+            except discord.Forbidden:
+                logging.warning(f"Tidak dapat mengirim DM ke {after.display_name} (DM tertutup).")
 
-                # Log ke admin channel
-                admin_log = discord.utils.get(guild.text_channels, name="laporan")
-                if admin_log:
+            # Kirim log ke channel admin
+            admin_log = discord.utils.get(guild.text_channels, name="laporan")
+            if admin_log:
+                if resolved_status in ["WizardMemberBulanan", "WizardMemberTahunan"]:
                     await admin_log.send(
-                        f"⚠️ **{after.display_name}** kehilangan status WizardMember dan diturunkan menjadi member."
+                        f"✅ **{after.display_name}** diupgrade ke **{resolved_status}** (berlaku sampai {new_expiry.split('T')[0]})."
+                    )
+                elif db_status in ["WizardMemberBulanan", "WizardMemberTahunan"] and resolved_status == "member":
+                    await admin_log.send(
+                        f"⚠️ **{after.display_name}** kehilangan status WizardMember dan diturunkan menjadi member biasa."
+                    )
+                elif resolved_status == "Admin":
+                    await admin_log.send(
+                        f"👑 **{after.display_name}** sekarang memiliki role **Admin**."
+                    )
+                elif db_status == "Admin" and resolved_status != "Admin":
+                    await admin_log.send(
+                        f"👤 **{after.display_name}** telah kehilangan role Admin dan statusnya disinkronkan ke **{resolved_status}**."
+                    )
+                elif resolved_status == "member" and db_status == "PendingVerification":
+                    await admin_log.send(
+                        f"✅ **{after.display_name}** berhasil diverifikasi sebagai **Member**."
+                    )
+                else:
+                    await admin_log.send(
+                        f"🔄 **{after.display_name}** status berubah dari **{db_status}** menjadi **{resolved_status}**."
                     )
 
-                logging.info(
-                    f"[on_member_update] {after.display_name} (ID: {user_id}) downgrade ke member"
-                )
+            logging.info(
+                f"[on_member_update] {after.display_name} (ID: {user_id}) status diupdate ke {resolved_status}"
+            )
 
     except Exception as e:
         logging.error(f"Error pada on_member_update Check Subscription: {e}", exc_info=True)
