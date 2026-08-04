@@ -6026,6 +6026,18 @@ class KontrolAdminView(discord.ui.View):
         await interaction.response.send_modal(ResetChannelModal("pengumuman"))
 
     # ------------------------------------------------------
+    # 📚 Tombol: Kirim Pembelajaran Baru
+    # ------------------------------------------------------
+    @discord.ui.button(
+        label="📚 Kirim Pembelajaran Baru",
+        style=discord.ButtonStyle.success,
+        custom_id="admin_send_pembelajaran",
+        row=0
+    )
+    async def send_pembelajaran(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.send_modal(PembelajaranModal())
+
+    # ------------------------------------------------------
     # 🧹 Tombol: Hapus Thread Usang
     # ------------------------------------------------------
     @discord.ui.button(
@@ -8116,11 +8128,19 @@ class WizardEmbedModal(Modal, title="Kirim Embed ke #wizard-strategy"):
                 except Exception:
                     pass
 
+        # Pilih emoji random untuk variasi judul thread (mewakili warna thread yang berbeda-beda)
+        random_emoji = random.choice(["💎", "🚀", "🔥", "✨", "🌟", "📊", "💡", "🔵", "🟣", "🔴", "🟢", "🟡", "🟠"])
+        thread_title = f"{random_emoji}｜{title[:85]}" if title else f"{random_emoji}｜Strategi Baru"
+
+        # Pilih warna random untuk embed agar bervariasi
+        embed_colors = [COLOR_CYAN, COLOR_VIOLET, COLOR_GREEN, 0x3B82F6, 0xF59E0B, 0xEC4899, 0xE74C3C]
+        random_color = random.choice(embed_colors)
+
         # --- Buat embed ---
         embed = discord.Embed(
             title=title,
             description=description,
-            color=discord.Color(COLOR_CYAN),
+            color=discord.Color(random_color),
             timestamp=datetime.now()
         )
         embed.set_footer(text=f"Dikirim oleh {interaction.user.display_name}")
@@ -8145,11 +8165,24 @@ class WizardEmbedModal(Modal, title="Kirim Embed ke #wizard-strategy"):
                 break
 
         try:
+            # Kirim pesan notifikasi pemrakarsa permanen di channel utama agar thread selalu terlihat
+            msg_content = f"{random_emoji} **Strategi Baru:** **{title}** telah dipublish oleh {interaction.user.mention}! Silakan klik thread di bawah ini untuk melihat detail strategi."
+            msg = await channel.send(content=msg_content)
+
+            # Buat thread baru dari pesan tersebut dengan durasi auto-archive maksimal (7 hari / 10080 menit) agar selalu aktif
+            thread = await msg.create_thread(
+                name=thread_title,
+                auto_archive_duration=10080,
+                reason=f"Strategi baru oleh {interaction.user.display_name}"
+            )
+
+            # Kirim embed & file hanya di dalam thread baru tersebut
             if files_to_send:
-                await channel.send(embed=embed, files=files_to_send)
+                await thread.send(embed=embed, files=files_to_send)
             else:
-                await channel.send(embed=embed)
-            await interaction.followup.send("✅ Embed berhasil dikirim ke #wizard-strategy!", ephemeral=True)
+                await thread.send(embed=embed)
+
+            await interaction.followup.send("✅ Thread baru berhasil dibuat di #wizard-strategy dan embed telah dikirim ke dalam thread tersebut!", ephemeral=True)
         except discord.errors.NotFound:
             print("[WARNING] Webhook follow-up sudah tidak aktif (10015).")
         except Exception as e:
@@ -8157,6 +8190,157 @@ class WizardEmbedModal(Modal, title="Kirim Embed ke #wizard-strategy"):
                 await interaction.followup.send(
                     embed=discord.Embed(
                         title="❌ Gagal Mengirim Embed",
+                        description=f"Terjadi kesalahan: `{e}`",
+                        color=discord.Color.red()
+                    ),
+                    ephemeral=True
+                )
+            except discord.errors.NotFound:
+                print(f"[ERROR] Tidak bisa follow-up: {e}")
+
+# 📚 PembelajaranModal — Kirim Embed & Thread ke #akademi (MEMBER)
+# ==============================================================
+
+class PembelajaranModal(Modal, title="Kirim Pembelajaran ke #akademi"):
+    def __init__(self):
+        super().__init__()
+
+        self.judul = TextInput(
+            label="Judul Pembelajaran",
+            placeholder="Contoh: Belajar Candlestick Pattern Lengkap",
+            max_length=100
+        )
+        self.add_item(self.judul)
+
+        self.isi = TextInput(
+            label="Isi Materi Pembelajaran",
+            style=discord.TextStyle.paragraph,
+            placeholder="Tuliskan materi pembelajaran atau penjelasan lengkap di sini...",
+            required=True,
+            max_length=1500
+        )
+        self.add_item(self.isi)
+
+        self.hasil_diff = TextInput(
+            label="Hasil Diff / Contoh Kode (opsional)",
+            style=discord.TextStyle.paragraph,
+            required=False,
+            placeholder="Akan dibungkus otomatis dalam blok ```...```"
+        )
+        self.add_item(self.hasil_diff)
+
+        self.link = TextInput(
+            label="Link Referensi / Sumber (opsional)",
+            required=False,
+            placeholder="https://tradingview.com/..."
+        )
+        self.add_item(self.link)
+
+        self.image_url = TextInput(
+            label="URL Gambar (Opsional)",
+            required=False,
+            placeholder="https://www.tradingview.com/x/abcd1234/"
+        )
+        self.add_item(self.image_url)
+
+    async def on_submit(self, interaction: discord.Interaction):
+        # --- Defer response ---
+        await interaction.response.defer(ephemeral=True)
+
+        guild = interaction.guild
+
+        # Cari channel akademi di kategori MEMBER
+        channel = next((ch for ch in guild.text_channels if ch.name == "akademi" and ch.category and "MEMBER" in ch.category.name.upper()), None)
+        if not channel:
+            channel = discord.utils.get(guild.text_channels, name="akademi")
+
+        if not channel:
+            await interaction.followup.send("❌ Channel #akademi tidak ditemukan!", ephemeral=True)
+            return
+
+        title = self.judul.value.strip()
+        description = self.isi.value.strip()
+        diff_code = self.hasil_diff.value.strip()
+        link = self.link.value.strip()
+        image_url = self.image_url.value.strip()
+
+        # --- Validasi gambar ---
+        if image_url:
+            if not image_url.lower().startswith(("http://", "https://")):
+                await interaction.followup.send("⚠️ URL gambar tidak valid.", ephemeral=True)
+                return
+            if not image_url.lower().endswith(('.png', '.jpg', '.jpeg', '.gif')):
+                await interaction.followup.send("⚠️ Hanya URL gambar langsung (.png/.jpg/.gif).", ephemeral=True)
+                return
+            if "tradingview.com/x/" in image_url:
+                try:
+                    snapshot_id = image_url.split("/x/")[1].strip("/ ")
+                    image_url = f"https://s3.tradingview.com/snapshots/{snapshot_id}.png"
+                except Exception:
+                    pass
+
+        # Pilih emoji random untuk variasi judul thread (mewakili warna thread yang berbeda-beda)
+        random_emoji = random.choice(["📚", "💡", "🧠", "✨", "🌟", "📖", "🟢", "🟡", "🟠", "🔵", "🟣", "🔴"])
+        thread_title = f"{random_emoji}｜{title[:85]}" if title else f"{random_emoji}｜Materi Baru"
+
+        # Pilih warna random untuk embed agar bervariasi
+        embed_colors = [COLOR_CYAN, COLOR_VIOLET, COLOR_GREEN, 0x3B82F6, 0xF59E0B, 0xEC4899, 0xE74C3C]
+        random_color = random.choice(embed_colors)
+
+        # --- Buat embed ---
+        embed = discord.Embed(
+            title=title,
+            description=description,
+            color=discord.Color(random_color),
+            timestamp=datetime.now()
+        )
+        embed.set_footer(text=f"Dikirim oleh {interaction.user.display_name}")
+        if image_url:
+            embed.set_image(url=image_url)
+
+        # Batasi panjang teks (maks 1024 per field)
+        if diff_code:
+            safe_diff = diff_code[:1000] + "..." if len(diff_code) > 1000 else diff_code
+            embed.add_field(name="📄 Contoh Kode / Catatan", value=f"```{safe_diff}```", inline=False)
+        if link:
+            safe_link = link[:1000] + "..." if len(link) > 1000 else link
+            embed.add_field(name="🔗 Link Referensi / Sumber", value=f"[Klik di sini]({safe_link})", inline=False)
+
+        # --- Cek upload user ---
+        files_to_send = []
+        async for msg in interaction.channel.history(limit=10):
+            if msg.author == interaction.user and msg.attachments:
+                for attach in msg.attachments:
+                    if not attach.filename.lower().endswith(('.exe', '.bat', '.sh', '.js')):
+                        files_to_send.append(await attach.to_file())
+                break
+
+        try:
+            # Kirim pesan notifikasi pemrakarsa permanen di channel utama agar thread selalu terlihat
+            msg_content = f"{random_emoji} **Materi Pembelajaran Baru:** **{title}** telah dipublish oleh {interaction.user.mention}! Silakan klik thread di bawah ini untuk membaca materi."
+            msg = await channel.send(content=msg_content)
+
+            # Buat thread baru dari pesan tersebut dengan durasi auto-archive maksimal (7 hari / 10080 menit) agar selalu aktif
+            thread = await msg.create_thread(
+                name=thread_title,
+                auto_archive_duration=10080,
+                reason=f"Materi baru oleh {interaction.user.display_name}"
+            )
+
+            # Kirim embed & file hanya di dalam thread baru tersebut
+            if files_to_send:
+                await thread.send(embed=embed, files=files_to_send)
+            else:
+                await thread.send(embed=embed)
+
+            await interaction.followup.send("✅ Thread pembelajaran baru berhasil dibuat di #akademi dan embed telah dikirim ke dalam thread tersebut!", ephemeral=True)
+        except discord.errors.NotFound:
+            print("[WARNING] Webhook follow-up sudah tidak aktif (10015).")
+        except Exception as e:
+            try:
+                await interaction.followup.send(
+                    embed=discord.Embed(
+                        title="❌ Gagal Mengirim Pembelajaran",
                         description=f"Terjadi kesalahan: `{e}`",
                         color=discord.Color.red()
                     ),
