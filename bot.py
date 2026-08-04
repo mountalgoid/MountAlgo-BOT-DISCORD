@@ -8128,11 +8128,19 @@ class WizardEmbedModal(Modal, title="Kirim Embed ke #wizard-strategy"):
                 except Exception:
                     pass
 
+        # Pilih emoji random untuk variasi judul thread (mewakili warna thread yang berbeda-beda)
+        random_emoji = random.choice(["💎", "🚀", "🔥", "✨", "🌟", "📊", "💡", "🔵", "🟣", "🔴", "🟢", "🟡", "🟠"])
+        thread_title = f"{random_emoji}｜{title[:85]}" if title else f"{random_emoji}｜Strategi Baru"
+
+        # Pilih warna random untuk embed agar bervariasi
+        embed_colors = [COLOR_CYAN, COLOR_VIOLET, COLOR_GREEN, 0x3B82F6, 0xF59E0B, 0xEC4899, 0xE74C3C]
+        random_color = random.choice(embed_colors)
+
         # --- Buat embed ---
         embed = discord.Embed(
             title=title,
             description=description,
-            color=discord.Color(COLOR_CYAN),
+            color=discord.Color(random_color),
             timestamp=datetime.now()
         )
         embed.set_footer(text=f"Dikirim oleh {interaction.user.display_name}")
@@ -8157,10 +8165,14 @@ class WizardEmbedModal(Modal, title="Kirim Embed ke #wizard-strategy"):
                 break
 
         try:
-            # Buat thread baru langsung di channel wizard-strategy
-            thread = await channel.create_thread(
-                name=title[:100] if title else "Strategi Baru",
-                auto_archive_duration=1440,
+            # Kirim pesan notifikasi pemrakarsa permanen di channel utama agar thread selalu terlihat
+            msg_content = f"{random_emoji} **Strategi Baru:** **{title}** telah dipublish oleh {interaction.user.mention}! Silakan klik thread di bawah ini untuk melihat detail strategi."
+            msg = await channel.send(content=msg_content)
+
+            # Buat thread baru dari pesan tersebut dengan durasi auto-archive maksimal (7 hari / 10080 menit) agar selalu aktif
+            thread = await msg.create_thread(
+                name=thread_title,
+                auto_archive_duration=10080,
                 reason=f"Strategi baru oleh {interaction.user.display_name}"
             )
 
@@ -8267,11 +8279,19 @@ class PembelajaranModal(Modal, title="Kirim Pembelajaran ke #akademi"):
                 except Exception:
                     pass
 
+        # Pilih emoji random untuk variasi judul thread (mewakili warna thread yang berbeda-beda)
+        random_emoji = random.choice(["📚", "💡", "🧠", "✨", "🌟", "📖", "🟢", "🟡", "🟠", "🔵", "🟣", "🔴"])
+        thread_title = f"{random_emoji}｜{title[:85]}" if title else f"{random_emoji}｜Materi Baru"
+
+        # Pilih warna random untuk embed agar bervariasi
+        embed_colors = [COLOR_CYAN, COLOR_VIOLET, COLOR_GREEN, 0x3B82F6, 0xF59E0B, 0xEC4899, 0xE74C3C]
+        random_color = random.choice(embed_colors)
+
         # --- Buat embed ---
         embed = discord.Embed(
             title=title,
             description=description,
-            color=discord.Color(COLOR_CYAN),
+            color=discord.Color(random_color),
             timestamp=datetime.now()
         )
         embed.set_footer(text=f"Dikirim oleh {interaction.user.display_name}")
@@ -8296,10 +8316,14 @@ class PembelajaranModal(Modal, title="Kirim Pembelajaran ke #akademi"):
                 break
 
         try:
-            # Buat thread baru langsung di channel akademi
-            thread = await channel.create_thread(
-                name=title[:100] if title else "Materi Pembelajaran Baru",
-                auto_archive_duration=1440,
+            # Kirim pesan notifikasi pemrakarsa permanen di channel utama agar thread selalu terlihat
+            msg_content = f"{random_emoji} **Materi Pembelajaran Baru:** **{title}** telah dipublish oleh {interaction.user.mention}! Silakan klik thread di bawah ini untuk membaca materi."
+            msg = await channel.send(content=msg_content)
+
+            # Buat thread baru dari pesan tersebut dengan durasi auto-archive maksimal (7 hari / 10080 menit) agar selalu aktif
+            thread = await msg.create_thread(
+                name=thread_title,
+                auto_archive_duration=10080,
                 reason=f"Materi baru oleh {interaction.user.display_name}"
             )
 
