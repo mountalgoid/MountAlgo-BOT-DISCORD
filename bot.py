@@ -8157,22 +8157,20 @@ class WizardEmbedModal(Modal, title="Kirim Embed ke #wizard-strategy"):
                 break
 
         try:
+            # Buat thread baru langsung di channel wizard-strategy
+            thread = await channel.create_thread(
+                name=title[:100] if title else "Strategi Baru",
+                auto_archive_duration=1440,
+                reason=f"Strategi baru oleh {interaction.user.display_name}"
+            )
+
+            # Kirim embed & file hanya di dalam thread baru tersebut
             if files_to_send:
-                msg = await channel.send(embed=embed, files=files_to_send)
+                await thread.send(embed=embed, files=files_to_send)
             else:
-                msg = await channel.send(embed=embed)
+                await thread.send(embed=embed)
 
-            # Buat thread baru di wizard-strategy dari pesan tersebut
-            try:
-                await msg.create_thread(
-                    name=title[:100] if title else "Strategi Baru",
-                    auto_archive_duration=1440,
-                    reason=f"Strategi baru oleh {interaction.user.display_name}"
-                )
-            except Exception as thread_err:
-                logging.error(f"Gagal membuat thread di wizard-strategy: {thread_err}")
-
-            await interaction.followup.send("✅ Embed berhasil dikirim ke #wizard-strategy dan thread baru telah dibuat!", ephemeral=True)
+            await interaction.followup.send("✅ Thread baru berhasil dibuat di #wizard-strategy dan embed telah dikirim ke dalam thread tersebut!", ephemeral=True)
         except discord.errors.NotFound:
             print("[WARNING] Webhook follow-up sudah tidak aktif (10015).")
         except Exception as e:
@@ -8298,22 +8296,20 @@ class PembelajaranModal(Modal, title="Kirim Pembelajaran ke #akademi"):
                 break
 
         try:
+            # Buat thread baru langsung di channel akademi
+            thread = await channel.create_thread(
+                name=title[:100] if title else "Materi Pembelajaran Baru",
+                auto_archive_duration=1440,
+                reason=f"Materi baru oleh {interaction.user.display_name}"
+            )
+
+            # Kirim embed & file hanya di dalam thread baru tersebut
             if files_to_send:
-                msg = await channel.send(embed=embed, files=files_to_send)
+                await thread.send(embed=embed, files=files_to_send)
             else:
-                msg = await channel.send(embed=embed)
+                await thread.send(embed=embed)
 
-            # Buat thread baru di channel akademi dari pesan tersebut
-            try:
-                await msg.create_thread(
-                    name=title[:100] if title else "Materi Pembelajaran Baru",
-                    auto_archive_duration=1440,
-                    reason=f"Materi baru oleh {interaction.user.display_name}"
-                )
-            except Exception as thread_err:
-                logging.error(f"Gagal membuat thread di akademi: {thread_err}")
-
-            await interaction.followup.send("✅ Materi pembelajaran berhasil dikirim ke #akademi and thread baru telah dibuat!", ephemeral=True)
+            await interaction.followup.send("✅ Thread pembelajaran baru berhasil dibuat di #akademi dan embed telah dikirim ke dalam thread tersebut!", ephemeral=True)
         except discord.errors.NotFound:
             print("[WARNING] Webhook follow-up sudah tidak aktif (10015).")
         except Exception as e:
