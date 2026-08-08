@@ -5995,6 +5995,26 @@ class WizardChannelSelectView(discord.ui.View):
             AnalysisModal(title="Analisis Gold/Komoditas Pasar", thread_name="wizard-gold")
         )
 
+class PembelajaranTargetSelectView(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=120)
+
+    @discord.ui.button(
+        label="📚 Akses Umum (#akademi)",
+        style=discord.ButtonStyle.success,
+        custom_id="select_pembelajaran_umum"
+    )
+    async def umum_selected(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.send_modal(PembelajaranModal(is_exclusive=False))
+
+    @discord.ui.button(
+        label="💎 Eksklusif Wizard (#wizard-strategy)",
+        style=discord.ButtonStyle.primary,
+        custom_id="select_pembelajaran_wizard"
+    )
+    async def wizard_selected(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.send_modal(PembelajaranModal(is_exclusive=True))
+
 class KontrolAdminView(discord.ui.View):
     """Panel kontrol utama untuk Admin MountAlgo"""
     def __init__(self):
@@ -6035,7 +6055,13 @@ class KontrolAdminView(discord.ui.View):
         row=0
     )
     async def send_pembelajaran(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await interaction.response.send_modal(PembelajaranModal())
+        view = PembelajaranTargetSelectView()
+        await interaction.response.send_message(
+            "📚 **Kirim Pembelajaran Baru**\n"
+            "Silakan pilih target akses untuk materi pembelajaran yang akan dikirim:",
+            view=view,
+            ephemeral=True
+        )
 
     # ------------------------------------------------------
     # 🧹 Tombol: Hapus Thread Usang
@@ -8201,9 +8227,11 @@ class WizardEmbedModal(Modal, title="Kirim Embed ke #wizard-strategy"):
 # 📚 PembelajaranModal — Kirim Embed & Thread ke #akademi (MEMBER)
 # ==============================================================
 
-class PembelajaranModal(Modal, title="Kirim Pembelajaran ke #akademi"):
-    def __init__(self):
-        super().__init__()
+class PembelajaranModal(Modal):
+    def __init__(self, is_exclusive: bool = False):
+        self.is_exclusive = is_exclusive
+        title_str = "Kirim Pembelajaran ke #wizard-strategy" if is_exclusive else "Kirim Pembelajaran ke #akademi"
+        super().__init__(title=title_str)
 
         self.judul = TextInput(
             label="Judul Pembelajaran",
@@ -8249,13 +8277,17 @@ class PembelajaranModal(Modal, title="Kirim Pembelajaran ke #akademi"):
 
         guild = interaction.guild
         
-        # Cari channel akademi di kategori MEMBER
-        channel = next((ch for ch in guild.text_channels if ch.name == "akademi" and ch.category and "MEMBER" in ch.category.name.upper()), None)
-        if not channel:
-            channel = discord.utils.get(guild.text_channels, name="akademi")
+        if self.is_exclusive:
+            channel = discord.utils.get(guild.text_channels, name="wizard-strategy")
+            target_name = "#wizard-strategy"
+        else:
+            channel = next((ch for ch in guild.text_channels if ch.name == "akademi" and ch.category and "MEMBER" in ch.category.name.upper()), None)
+            if not channel:
+                channel = discord.utils.get(guild.text_channels, name="akademi")
+            target_name = "#akademi"
 
         if not channel:
-            await interaction.followup.send("❌ Channel #akademi tidak ditemukan!", ephemeral=True)
+            await interaction.followup.send(f"❌ Channel {target_name} tidak ditemukan!", ephemeral=True)
             return
 
         title = self.judul.value.strip()
@@ -8317,7 +8349,10 @@ class PembelajaranModal(Modal, title="Kirim Pembelajaran ke #akademi"):
 
         try:
             # Kirim pesan notifikasi pemrakarsa permanen di channel utama agar thread selalu terlihat
-            msg_content = f"{random_emoji} **Materi Pembelajaran Baru:** **{title}** telah dipublish oleh {interaction.user.mention}! Silakan klik thread di bawah ini untuk membaca materi."
+            if self.is_exclusive:
+                msg_content = f"{random_emoji} **Materi Pembelajaran Eksklusif:** **{title}** telah dipublish oleh {interaction.user.mention}! Silakan klik thread di bawah ini untuk membaca materi."
+            else:
+                msg_content = f"{random_emoji} **Materi Pembelajaran Baru:** **{title}** telah dipublish oleh {interaction.user.mention}! Silakan klik thread di bawah ini untuk membaca materi."
             msg = await channel.send(content=msg_content)
             
             # Buat thread baru dari pesan tersebut dengan durasi auto-archive maksimal (7 hari / 10080 menit) agar selalu aktif
@@ -8333,7 +8368,7 @@ class PembelajaranModal(Modal, title="Kirim Pembelajaran ke #akademi"):
             else:
                 await thread.send(embed=embed)
 
-            await interaction.followup.send("✅ Thread pembelajaran baru berhasil dibuat di #akademi dan embed telah dikirim ke dalam thread tersebut!", ephemeral=True)
+            await interaction.followup.send(f"✅ Thread pembelajaran baru berhasil dibuat di {target_name} dan embed telah dikirim ke dalam thread tersebut!", ephemeral=True)
         except discord.errors.NotFound:
             print("[WARNING] Webhook follow-up sudah tidak aktif (10015).")
         except Exception as e:
